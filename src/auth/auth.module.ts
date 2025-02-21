@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../Entity/user.entity';
+import { User } from '../entity/user.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { UserOtp } from '../Entity/userotp.entity';
+import { UserOtp } from '../entity/userotp.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, UserOtp]),

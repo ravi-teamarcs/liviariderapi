@@ -3,11 +3,11 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto, VerifyOtpDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../Entity/user.entity';
+import { User } from '../entity/user.entity';
 import * as crypto from "crypto";
 import * as jwt from 'jsonwebtoken';
 import { JwtService } from '@nestjs/jwt';
-import { UserOtp } from '../Entity/userotp.entity';
+import { UserOtp } from '../entity/userotp.entity';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -227,11 +227,13 @@ export class AuthService {
 
 
     return {
-      message: 'OTP is valid, tokens generated successfully!',
-      accessToken,
-      referenceToken,
       status: 200,
-      matched: true
+      isValid:true,
+      message: 'Login Successfully!',
+      data:{
+        accessToken,
+        referenceToken,
+      }
     };
   }
 
