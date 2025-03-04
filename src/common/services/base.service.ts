@@ -1,0 +1,73 @@
+
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../../entity/user.entity';
+import { UserData } from '../../entity/userdata.entity';
+import { Repository } from 'typeorm';
+export class BaseService{
+    private salt?: string;
+    private method?: string;
+    // private userRepository: Repository<User>;
+    private userDataRepository: Repository<UserData>;
+  constructor(salt?: string, method?: string) {
+    this.salt = salt;
+    this.method = method;
+  }
+
+  hashPassword(password?: string): string {
+    if (!password) {
+      password = `${Date.now()}-Livia`; // Equivalent to `uniqid().'-Livia'`
+    }
+
+    if (this.method === 'md5') {
+      return crypto.createHash('md5').update(this.salt + password).digest('hex');
+    } else if (this.method === 'sha1') {
+      return crypto.createHash('sha1').update(this.salt + password).digest('hex');
+    } else if (this.method === 'bcrypt') {
+      const saltRounds = 14; // Bcrypt cost
+      return bcrypt.hashSync(password, saltRounds);
+    } else {
+      throw new Error('Invalid hashing method');
+    }
+  }
+  async getLocationFromLatLong(latitude: number, longitude: number): Promise<string> {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
+  
+    const response = await fetch(url);
+    const data = await response.json();
+  
+    if (data.status === 'OK' && data.results.length > 0) {
+      return data.results[0].formatted_address;
+    } else {
+      throw new Error('Unable to fetch location from Google Maps API');
+    }
+  }
+  // async getUserDetails(id: number, role: number) {
+  //   const userDataArray = await this.userDataRepository
+  //     .createQueryBuilder('userData')
+  //     .where('userData.user_id = :id AND userData.role_id = :role', { id, role })
+  //     .getMany();
+  //   const userData = userDataArray.reduce((acc, curr) => {
+  //     acc[curr.field_key] = curr.field_value;
+  //     return acc;
+  //   }, {});
+
+  //   return userData;
+  // }
+
+  async getUserDetails(id: number, role: number) {
+    const userDataArray = await this.userDataRepository
+      .createQueryBuilder('userData')
+      .where('userData.user_id = :id AND userData.role_id = :role', { id, role })
+      .getMany();
+
+    const userData = userDataArray.reduce((acc, curr) => {
+      acc[curr.field_key] = curr.field_value;
+      return acc;
+    }, {});
+
+    return userData;
+  }
+}
