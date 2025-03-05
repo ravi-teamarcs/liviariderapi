@@ -6,6 +6,8 @@ import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
+import { ForgotPasswordPhoneDto, ResetPasswordDto, VerifyOtpForPasswordDto } from './dto/forgot-password.dto';
+import { ResendOtpDto } from './dto/login.dto';
 
 interface MulterFile {
     fieldname: string;
@@ -32,22 +34,22 @@ export class AuthController {
         return await this.authService.login(loginDto);
     }
 
-    @HttpCode(200)
-    @ApiOperation({ summary: 'resets OTP by mobile' })
-    @Post('resendotp')
-    @UsePipes(ValidationPipe)
-    @ApiOperation({ summary: 'login' })
-    async resendOtp(@Body() user_id: number) {
-        try {
-            const result = await this.authService.resendOtp(user_id);
-            return result;
-        } catch (error) {
-            return {
-                message: error.message,
-                status: 400,
-            };
-        }
-    }
+    // @HttpCode(200)
+    // @ApiOperation({ summary: 'resets OTP by mobile' })
+    // @Post('resendotp')
+    // @UsePipes(ValidationPipe)
+    // @ApiOperation({ summary: 'login' })
+    // async resendOtp(@Body() user_id: number) {
+    //     try {
+    //         const result = await this.authService.resendOtp(user_id);
+    //         return result;
+    //     } catch (error) {
+    //         return {
+    //             message: error.message,
+    //             status: 400,
+    //         };
+    //     }
+    // }
 
     @HttpCode(200)
     @ApiOperation({ summary: 'verify otp using mobile' })
@@ -116,5 +118,37 @@ export class AuthController {
         } catch (error) {
             throw new BadRequestException(error.message);
         }
+    }
+
+    @Post('resend-otp')
+    @HttpCode(200)
+    @UsePipes(ValidationPipe)
+    @ApiOperation({ summary: 'Resend OTP for login or registration' })
+    async resendOtp(@Body() resendOtpDto: ResendOtpDto) {
+        return await this.authService.resendOtp(resendOtpDto);
+    }
+
+    @Post('forgot-password/phone')
+    @HttpCode(200)
+    @UsePipes(ValidationPipe)
+    @ApiOperation({ summary: 'Request password reset using phone number' })
+    async forgotPasswordPhone(@Body() forgotPasswordDto: ForgotPasswordPhoneDto) {
+        return await this.authService.forgotPasswordPhone(forgotPasswordDto);
+    }
+
+    @Post('forgot-password/verify-otp')
+    @HttpCode(200)
+    @UsePipes(ValidationPipe)
+    @ApiOperation({ summary: 'Verify OTP for password reset' })
+    async verifyOtpForPassword(@Body() verifyOtpDto: VerifyOtpForPasswordDto) {
+        return await this.authService.verifyOtpForPassword(verifyOtpDto);
+    }
+
+    @Post('forgot-password/reset')
+    @HttpCode(200)
+    @UsePipes(ValidationPipe)
+    @ApiOperation({ summary: 'Reset password after OTP verification' })
+    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+        return await this.authService.resetPassword(resetPasswordDto);
     }
 }

@@ -10,10 +10,12 @@ import * as jwt from 'jsonwebtoken';
 import { JwtService } from '@nestjs/jwt';
 import { UserOtp } from '../entity/userotp.entity';
 import { ConfigService } from '@nestjs/config';
-import {method, salt} from '../common/constants/config.json' 
+import {method, salt} from '../common/constants/config.json';
 import { BaseService } from 'src/common/services/base.service';
 import { UserData } from 'src/entity/userdata.entity';
 import { Counties } from 'src/entity/countries.entity';
+import { ForgotPasswordPhoneDto, ResetPasswordDto, VerifyOtpForPasswordDto } from './dto/forgot-password.dto';
+import { ResendOtpDto } from './dto/login.dto';
 
 interface MulterFile {
   fieldname: string;
@@ -37,7 +39,6 @@ export class AuthService {
     @InjectRepository(Counties) private countryRepository: Repository<Counties>,
     private configService: ConfigService,
     private jwtService: JwtService, 
-    
   ) { this.baseService = new BaseService(salt, method); }
 
   async register(registerDto: RegisterDto) {
@@ -488,71 +489,36 @@ export class AuthService {
     };
   }
 
-
-  // async login(loginDto: LoginDto) {
-
-  //   const otp = crypto.randomInt(1000, 9999).toString();
-
-  //   try {
-  //     let isNew = true;
-  //     const userhasotp = await this.UserOtpRepository.findOne({ where: { email: loginDto.email } })
-  //     if (userhasotp) {
-  //       userhasotp.otp = otp;
-  //       await this.UserOtpRepository.save(userhasotp);  // Save the updated OTP
-  //       isNew=false;
-  //     }
-  //     else {
-  //       const userOtp = this.UserOtpRepository.create({
-  //         email: loginDto.email,
-  //         otp: otp,
-  //       });
-
-  //       await this.UserOtpRepository.save(userOtp);
-
-  //       const user = this.UserRepository.create({
-  //         email: userOtp.email,
-  //       });
-  //       await this.UserRepository.save(user);
-
-  //     }
-  //     return { email: loginDto.email, status: 200, isNew: isNew };
-  //   } catch (error) {
-  //     console.error('Error saving OTP:', error);
-  //     throw new HttpException('Failed to store OTP', HttpStatus.INTERNAL_SERVER_ERROR);
-  //   }
-
-
-  // }
-    async login(loginDto: LoginDto){
-      const user = await this.userRepository.findOne({
-        where: { login_email: loginDto.email },
-        select: [
-          'id',
-          'password',
-          'status',
-        ],
-      });
-      if (!user) {
-        throw new UnauthorizedException(
-          'You have entered an invalid email or password',
-        );
-      }
-
-      if (user && !user.status) {
-        throw new ForbiddenException('Inactive user cannot login');
-      }
-      
-      const hashedPassword = this.baseService.hashPassword(loginDto.password);
-
-      if (hashedPassword !== user.password) {
-        throw new UnauthorizedException(
-          'You have entered an invalid password',
-        );
-      }
-
-      return { message: 'OTP sent successfully', id: user.id, status:200 };
-
+  async login(loginDto: LoginDto){
+    const user = await this.userRepository.findOne({
+      where: { login_email: loginDto.email },
+      select: [
+        'id',
+        'password',
+        'status',
+      ],
+    });
+    if (!user) {
+      throw new UnauthorizedException(
+        'You have entered an invalid email or password',
+      );
     }
+
+    if (user && !user.status) {
+      throw new ForbiddenException('Inactive user cannot login');
+    }
+    
+    const hashedPassword = this.baseService.hashPassword(loginDto.password);
+
+    if (hashedPassword !== user.password) {
+      throw new UnauthorizedException(
+        'You have entered an invalid password',
+      );
+    }
+
+    return { message: 'OTP sent successfully', id: user.id, status:200 };
+
+  }
 
   async verifyOTP(VerifyOtpDto: VerifyOtpDto) {
     const { id, otp } = VerifyOtpDto;
@@ -699,31 +665,101 @@ export class AuthService {
     return diff / 60000;
   }
 
-  async resendOtp(id: number) {
-
-    const otp = crypto.randomInt(1000, 9999).toString();
-
+  async resendOtp(resendOtpDto: ResendOtpDto) {
     try {
+      const user = await this.userRepository.findOne({
+        where: { id: resendOtpDto.id }
+      });
 
-      const existingOtp = await this.UserOtpRepository.findOne({ where: { user_id : id } })
-      if (existingOtp) {
-        existingOtp.otp = otp;
-        await this.UserOtpRepository.save(existingOtp);
-      } 
-      else {
-
-        // const userOtp = this.UserOtpRepository.create({
-        //   id,
-        //   otp,
-        // });
-        // await this.UserOtpRepository.save(userOtp);
+      if (!user) {
+        throw new NotFoundException('User not found');
       }
 
+      if (!user.status) {
+        throw new ForbiddenException('Account is inactive');
+      }
 
-      return { message: 'OTP resent successfully!', status: 200 };
+      // For development environment, return 0000
+      if (this.configService.get('NODE_ENV') === 'DEV' || 
+          this.configService.get('NODE_ENV') === 'UAT') {
+        const response = {
+          status: 200,
+          message: 'OTP sent successfully',
+          data: {
+            id: user.id,
+            email_otp: '0000'
+          }
+        };
+
+        if (resendOtpDto.action === 'register') {
+          response.data['phone_otp'] = '0000';
+        }
+
+        return response;
+      }
+
+      // Generate new OTPs
+      const emailOtp = crypto.randomInt(1000, 9999).toString();
+      const phoneOtp = resendOtpDto.action === 'register' ? crypto.randomInt(1000, 9999).toString() : null;
+
+      // Save Email OTP
+      const existingEmailOtp = await this.UserOtpRepository.findOne({ 
+        where: { 
+          user_id: user.id,
+          action: `${resendOtpDto.action}_email`
+        } 
+      });
+
+      if (existingEmailOtp) {
+        existingEmailOtp.otp = emailOtp;
+        await this.UserOtpRepository.save(existingEmailOtp);
+      } else {
+        const userEmailOtp = this.UserOtpRepository.create({
+          user_id: user.id,
+          otp: emailOtp,
+          action: `${resendOtpDto.action}_email`
+        });
+        await this.UserOtpRepository.save(userEmailOtp);
+      }
+
+      // For registration, also save Phone OTP
+      if (resendOtpDto.action === 'register') {
+        const existingPhoneOtp = await this.UserOtpRepository.findOne({ 
+          where: { 
+            user_id: user.id,
+            action: `${resendOtpDto.action}_phone`
+          } 
+        });
+
+        if (existingPhoneOtp) {
+          existingPhoneOtp.otp = phoneOtp;
+          await this.UserOtpRepository.save(existingPhoneOtp);
+        } else {
+          const userPhoneOtp = this.UserOtpRepository.create({
+            user_id: user.id,
+            otp: phoneOtp,
+            action: `${resendOtpDto.action}_phone`
+          });
+          await this.UserOtpRepository.save(userPhoneOtp);
+        }
+      }
+
+      // Here you would typically send the OTPs via email and SMS
+      // TODO: Implement email and SMS sending logic
+
+      return {
+        status: 200,
+        message: 'OTP sent successfully',
+        data: {
+          id: user.id,
+          ...(this.configService.get('NODE_ENV') === 'DEV' && { 
+            email_otp: emailOtp,
+            ...(resendOtpDto.action === 'register' && { phone_otp: phoneOtp })
+          })
+        }
+      };
     } catch (error) {
-      console.error('Error resending OTP:', error);
-      throw new Error('Failed to resend OTP');
+      throw error;
     }
   }
 
@@ -798,13 +834,144 @@ export class AuthService {
     }
 }
 
+  async forgotPasswordPhone(forgotPasswordDto: ForgotPasswordPhoneDto) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { phone_number: forgotPasswordDto.mobile }
+      });
 
+      if (!user) {
+        throw new NotFoundException('No user found with this phone number');
+      }
+
+      if (!user.status) {
+        throw new ForbiddenException('Account is inactive');
+      }
+
+      // Generate OTP
+      const otp = crypto.randomInt(1000, 9999).toString();
+
+      // Save OTP
+      const existingOtp = await this.UserOtpRepository.findOne({ 
+        where: { 
+          user_id: user.id,
+          action: 'forgot_password'
+        } 
+      });
+
+      if (existingOtp) {
+        existingOtp.otp = otp;
+        await this.UserOtpRepository.save(existingOtp);
+      } else {
+        const userOtp = this.UserOtpRepository.create({
+          user_id: user.id,
+          otp: otp,
+          action: 'forgot_password'
+        });
+        await this.UserOtpRepository.save(userOtp);
+      }
+
+      return {
+        status: 200,
+        message: 'OTP sent successfully',
+        data: {
+          id: user.id
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verifyOtpForPassword(verifyOtpDto: VerifyOtpForPasswordDto) {
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: verifyOtpDto.id }
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.status) {
+        throw new ForbiddenException('Account is inactive');
+      }
+
+      // For development environment, allow bypass with 0000
+      if (
+        (this.configService.get('NODE_ENV') === 'DEV' ||
+         this.configService.get('NODE_ENV') === 'UAT') &&
+        verifyOtpDto.otp === '0000'
+      ) {
+        return {
+          status: 200,
+          message: 'OTP verified successfully',
+          data: {
+            id: user.id
+          }
+        };
+      }
+
+      const userOtp = await this.UserOtpRepository.findOne({
+        where: {
+          user_id: verifyOtpDto.id,
+          action: 'forgot_password'
+        }
+      });
+
+      if (!userOtp || userOtp.otp !== verifyOtpDto.otp) {
+        throw new BadRequestException('Invalid OTP');
+      }
+
+      return {
+        status: 200,
+        message: 'OTP verified successfully',
+        data: {
+          id: user.id
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    try {
+      if (resetPasswordDto.password !== resetPasswordDto.confirmPassword) {
+        throw new BadRequestException('Passwords do not match');
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { id: resetPasswordDto.id }
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (!user.status) {
+        throw new ForbiddenException('Account is inactive');
+      }
+
+      // Hash the new password
+      const hashedPassword = this.baseService.hashPassword(resetPasswordDto.password);
+
+      // Update password
+      user.password = hashedPassword;
+      await this.userRepository.save(user);
+
+      // Delete the OTP
+      await this.UserOtpRepository.delete({
+        user_id: resetPasswordDto.id,
+        action: 'forgot_password'
+      });
+
+      return {
+        status: 200,
+        message: 'Password updated successfully'
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
-// const user = await this.UserRepository.findOne({ where: { email: loginDto.email, isActive: true } });
-// if (!user) {
-//   throw new Error("Invalid Email");
-// }
-// const hashedPassword = crypto.createHash("md5").update(loginDto.password).digest("hex");
-// if (hashedPassword !== user.password) {
-//   throw new Error("Invalid Password");
-// }

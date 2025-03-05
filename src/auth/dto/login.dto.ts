@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, IsNotEmpty, IsNumber, Matches, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Matches, IsEmail, IsIn } from 'class-validator';
 
 // export class LoginDto {
 //   // @IsString()
@@ -61,4 +61,16 @@ export class RegisterVerifyOTP {
   @IsString()
   @IsNotEmpty()
   phoneOtp: string;
+}
+
+export class ResendOtpDto {
+  @ApiProperty({ example: '1' })
+  @IsNotEmpty()
+  id: number;
+
+  @ApiProperty({ example: 'login' })
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(['login', 'register'])
+  action: string;
 }
