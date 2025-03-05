@@ -21,6 +21,7 @@ async function bootstrap() {
     .setDescription('API documentation for my application')
     .setVersion('1.0')
     .addBearerAuth() 
+    .addServer(process.env.RAPI)
     .addApiKey(
       { type: 'apiKey', in: 'header', name: 'x-api-key' },
       'API_KEY',  
