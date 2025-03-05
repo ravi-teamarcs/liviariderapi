@@ -42,8 +42,8 @@ export class AuthService {
     const newUser = this.userRepository.create({
       login_email: registerDto.email,
       password: hashedPassword,
-      login_phone: registerDto.mobile,
-      phone_code: '',
+      login_phone: registerDto.phone_code + registerDto.mobile,
+      phone_code: registerDto.phone_code,
       phone_number: registerDto.mobile,
       status: true,
     });

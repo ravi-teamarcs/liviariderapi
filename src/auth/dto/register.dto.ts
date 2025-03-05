@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, IsNotEmpty, IsEmail, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, Matches, IsNumber } from 'class-validator';
 
 export class RegisterDto {
 
@@ -22,6 +22,11 @@ export class RegisterDto {
     @Transform(({ value }) => value.toLowerCase())
     email: string;
 
+    @ApiProperty({ example: '254' })
+    @IsNotEmpty()
+    @IsString()
+    phone_code: string;
+
     @ApiProperty({ example: '1234567890' })
     @IsNotEmpty()
     @Matches(/^\d{10}$|^\d{12}$/, {
@@ -33,6 +38,7 @@ export class RegisterDto {
     @IsNotEmpty()
     @IsString()
     password: string;
+
 
   
 }

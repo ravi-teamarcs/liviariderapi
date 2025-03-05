@@ -58,7 +58,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Register new user' })
     @Post('register')
     @UsePipes(ValidationPipe)
-    @ApiOperation({ summary: 'login' })
+    @ApiOperation({ summary: 'Register' })
     async register(@Body() registerDto: RegisterDto) {
         return await this.authService.register(registerDto);
     }
