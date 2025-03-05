@@ -15,6 +15,17 @@ import { BaseService } from 'src/common/services/base.service';
 import { UserData } from 'src/entity/userdata.entity';
 import { Counties } from 'src/entity/countries.entity';
 
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
 
 @Injectable()
 export class AuthService {
@@ -726,6 +737,68 @@ export class AuthService {
     }));
     return { status: 200, message: 'Countries fetched successfully', data: result };
   }
+
+  async saveFilesData(req, files: MulterFile[]) {
+    try {
+        const { id } = req.user;
+        if(!id) {
+          throw new BadRequestException('User not found');
+        }
+
+        // Check if we have both front and back files
+        if (files.length !== 2) {
+            throw new BadRequestException('Please upload both front and back ID photos');
+        }
+
+        const frontFile = files.find(file => file.fieldname === 'photo_id_number_frontend');
+        const backFile = files.find(file => file.fieldname === 'photo_id_number_backend');
+
+        if (!frontFile || !backFile) {
+            throw new BadRequestException('Please provide both front and back ID photos with correct field names');
+        }
+
+        // Create user_data entries for both files
+        const userDataEntries = [
+            {
+                user_id: id,
+                field_key: 'photo_id_number_frontend',
+                field_value: 'uploads/'+frontFile.filename,
+                role_id: 6
+            },
+            {
+                user_id: id,
+                field_key: 'photo_id_number_backend',
+                field_value: 'uploads/'+backFile.filename,
+                role_id: 6
+            }
+        ];
+
+        // Save to user_data table
+        await this.userDataRepository.save(userDataEntries);
+      
+        return {
+            status: 200,
+            message: 'ID photos uploaded successfully',
+            data: {
+                totalFiles: files.length,
+                files: {
+                    frontId: {
+                        filename: frontFile.filename,
+                        fileUrl: `${process.env.IMAGE_UPLOAD_URL}uploads/${frontFile.filename}`
+                    },
+                    backId: {
+                        filename: backFile.filename,
+                        fileUrl: `${process.env.IMAGE_UPLOAD_URL}uploads/${backFile.filename}`
+                    }
+                }
+            }
+        };
+    } catch (error) {
+        throw new InternalServerErrorException('Error saving files data: ' + error.message);
+    }
+}
+
+
 }
 // const user = await this.UserRepository.findOne({ where: { email: loginDto.email, isActive: true } });
 // if (!user) {

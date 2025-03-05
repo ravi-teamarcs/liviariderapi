@@ -1,11 +1,23 @@
-import { Controller, Post, Body, Get, Param, UsePipes, ValidationPipe, HttpCode, UseGuards, UseInterceptors, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UsePipes, ValidationPipe, HttpCode, UseGuards, UseInterceptors, Req, UploadedFiles, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto, RegisterVerifyOTP, VerifyOtpDto } from './dto/login.dto';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from 'src/guard/auth.guard';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/config/multer.config';
 
+interface MulterFile {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    destination: string;
+    filename: string;
+    path: string;
+    buffer: Buffer;
+}
 
 @Controller('auth') // The base route for authentication-related actions
 export class AuthController {
@@ -79,5 +91,30 @@ export class AuthController {
     @ApiOperation({ summary: 'Get Active Country' })
     async GetActiveCountry() {
         return await this.authService.GetActiveCountry();
+    }
+
+    @Post('upload')
+    @UsePipes(ValidationPipe)
+    @UseGuards(AuthGuard)
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'photo_id_number_frontend', maxCount: 1 },
+        { name: 'photo_id_number_backend', maxCount: 1 }
+    ], multerConfig))
+    async uploadFiles(@Req() req: Request, @UploadedFiles() files: { 
+        photo_id_number_frontend?: MulterFile[], 
+        photo_id_number_backend?: MulterFile[] 
+    }) {
+        try {
+            if (!files.photo_id_number_frontend?.[0] || !files.photo_id_number_backend?.[0]) {
+                throw new BadRequestException('Please upload both front and back ID photos');
+            }
+
+            return await this.authService.saveFilesData(req, [
+                files.photo_id_number_frontend[0],
+                files.photo_id_number_backend[0]
+            ]);
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
     }
 }
