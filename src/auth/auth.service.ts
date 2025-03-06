@@ -16,6 +16,9 @@ import { UserData } from 'src/entity/userdata.entity';
 import { Counties } from 'src/entity/countries.entity';
 import { ForgotPasswordPhoneDto, ResetPasswordDto, VerifyOtpForPasswordDto } from './dto/forgot-password.dto';
 import { ResendOtpDto } from './dto/login.dto';
+import { UserRole } from 'src/entity/user-role.entity';
+import { Role } from 'src/entity/role.entity';
+import { ROLE } from 'src/common/constants/config.json';
 
 interface MulterFile {
   fieldname: string;
@@ -37,9 +40,20 @@ export class AuthService {
     @InjectRepository(UserOtp) private UserOtpRepository: Repository<UserOtp>,
     @InjectRepository(UserData) private userDataRepository: Repository<UserData>,
     @InjectRepository(Counties) private countryRepository: Repository<Counties>,
+    @InjectRepository(UserRole) private userRoleRepository: Repository<UserRole>,
+    @InjectRepository(Role) private roleRepository: Repository<Role>,
     private configService: ConfigService,
     private jwtService: JwtService, 
   ) { this.baseService = new BaseService(salt, method); }
+
+  async verifyRole(roleId:number){
+    const deliveryId = await this.roleRepository.findOne({ where: { name : ROLE} });
+    const delivery = await this.userRoleRepository.findOne({ where: { role_id : deliveryId.id, user_id: roleId} });
+    if(delivery){
+      return true;
+    }
+    return false;
+  }
 
   async register(registerDto: RegisterDto) {
     const saltRounds = 10;
@@ -60,13 +74,19 @@ export class AuthService {
       status: true,
     });
 
+    const role = await this.roleRepository.findOne({ where: { name : ROLE} });
+    const userRole = this.userRoleRepository.create({
+      role_id: role.id,
+      user_id: newUser.id
+    });
     try {
       const savedUser = await this.userRepository.save(newUser);
-      const userExists = await this.userRepository.findOne({ where: { id: newUser.id } });
+      await this.userRoleRepository.save(userRole);
+      // const userExists = await this.userRepository.findOne({ where: { id: newUser.id } });
 
-      if (!userExists) {
-          throw new Error('User does not exist');
-      }
+      // if (!userExists) {
+      //     throw new Error('User does not exist');
+      // }
       const userDataRecords = [
         { user_id: newUser.id, role_id: 6, field_key: 'first_name', field_value: registerDto.firstName },
         { user_id: newUser.id, role_id: 6, field_key: 'last_name', field_value: registerDto.lastName }
@@ -99,7 +119,6 @@ export class AuthService {
     if (user && !user.status) {
       throw new ForbiddenException('Inactive user cannot login');
     }
-
     const userPhoneOtp = await this.UserOtpRepository.findOne({ where: { user_id: id, action:'signup_phone' }, select: [
       'otp',
     ], });
@@ -468,9 +487,18 @@ export class AuthService {
     //     matched: false
     //   };
     // }
+    const roleId = await this.roleRepository.findOne({ where: { name: ROLE } });
+    if (!roleId) {
+      throw new NotFoundException('Role not found');
+    }
 
+    const assignRole = this.userRoleRepository.create({
+      user_id: id,
+      role_id: roleId.id
+    });
+    await this.userRoleRepository.save(assignRole);
 
-    const payload = { id };
+    const payload = { id, role_id: roleId.id };
     // const accessToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
     // const referenceToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.REFEXPIRESIN || '1d'}` });
     const accessToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
@@ -504,6 +532,13 @@ export class AuthService {
       );
     }
 
+    const isvalidDeliveryBoy = await this.verifyRole(user.id);
+    if(!isvalidDeliveryBoy){
+      throw new UnauthorizedException(
+        'You have entered an invalid email or password',
+      );
+    }
+
     if (user && !user.status) {
       throw new ForbiddenException('Inactive user cannot login');
     }
@@ -531,6 +566,9 @@ export class AuthService {
         'status',
       ],
     });
+    const role = await this.userRoleRepository.findOne({ where: { user_id: id }, select: [
+      'role',
+    ], });
     if (!user) {
       throw new NotFoundException('Invalid request. No user found.');
     }
@@ -639,8 +677,8 @@ export class AuthService {
     //   };
     // }
 
-
-    const payload = { id };
+    const payload = { id, role_id: role.role_id };
+    console.log(payload);
     // const accessToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
     // const referenceToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.REFEXPIRESIN || '1d'}` });
     const accessToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });

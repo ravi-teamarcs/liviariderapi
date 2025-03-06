@@ -1,6 +1,7 @@
 {
     "ROUTE": "user",
     "salt" : "ldf2345!@#jalSADkjhsd324$%^&239482LJ^(*#!-_Hh546874.livia",
-    "method":"sha1"
+    "method":"sha1",
+    "ROLE":"Delivery"
   }
   

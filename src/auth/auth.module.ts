@@ -10,9 +10,11 @@ import { Counties } from 'src/entity/countries.entity';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { multerConfig } from 'src/config/multer.config';
 import { MulterModule } from '@nestjs/platform-express';
+import { UserRole } from 'src/entity/user-role.entity';
+import { Role } from 'src/entity/role.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserOtp, UserData, Counties]),
+  imports: [TypeOrmModule.forFeature([User, UserOtp, UserData, Counties,UserRole, Role ]),
   MulterModule.register(multerConfig),
   JwtModule.register({
     secret: process.env.JWT_SECRET || 'raider',

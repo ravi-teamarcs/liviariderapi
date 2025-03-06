@@ -31,7 +31,7 @@ export class BaseService{
       throw new Error('Invalid hashing method');
     }
   }
-  async getLocationFromLatLong(latitude: number, longitude: number): Promise<string> {
+  async getLocationFromLatLong(latitude: any, longitude: any): Promise<string> {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
   

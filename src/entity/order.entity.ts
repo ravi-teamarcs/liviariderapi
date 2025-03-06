@@ -29,6 +29,9 @@ export class Order {
   @Column()
   create_date: Date;
 
+  @Column()
+  user_order_status: number;
+
   @ManyToOne(() => User, (user) => user.orders)
   @JoinColumn({ name: 'user_id' })
   user: User;

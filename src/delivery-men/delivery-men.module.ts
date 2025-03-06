@@ -7,9 +7,10 @@ import { UserData } from '../entity/userdata.entity';
 import { BaseService } from 'src/common/services/base.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { JwtModule } from '@nestjs/jwt';
+import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, UserData]),
+  imports: [TypeOrmModule.forFeature([Order, UserData, OrdersPharmacies]),
   JwtModule.register({
     secret: process.env.JWT_SECRET || 'raider',
     signOptions: { expiresIn: process.env.EXPIRESIN || '1h' },

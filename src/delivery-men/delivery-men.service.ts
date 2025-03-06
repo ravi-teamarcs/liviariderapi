@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../entity/order.entity'; 
 import { UserData } from 'src/entity/userdata.entity'; // Import UserData entity
 import { BaseService } from 'src/common/services/base.service';
+import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 
 @Injectable()
 export class DeliveryMenService {
@@ -12,8 +13,11 @@ export class DeliveryMenService {
     private orderRepository: Repository<Order>,
 
     @InjectRepository(UserData)
-    private userDataRepository: Repository<UserData>, // Inject UserData repository
-    
+    private userDataRepository: Repository<UserData>,
+
+    @InjectRepository(OrdersPharmacies)
+    private ordersPharmaciesRepository: Repository<OrdersPharmacies>,
+
     private baseService: BaseService
   ) {  }
 
@@ -90,12 +94,13 @@ export class DeliveryMenService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.userData', 'user_data')
-      .where('order.delivery_men = :deliveryMenId', { deliveryMenId });
+      .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId:12, status: 7 });
 
     const data = await query
       .select([
         'order.id',
         'order.user_id',
+        'order.user_order_status',
         'order.delivery_men',
         'order.latitude',
         'order.longitude',
@@ -107,16 +112,37 @@ export class DeliveryMenService {
 
     try {
       const result = await Promise.all(data.map(async (order) => {
-        const { latitude, longitude, ...orderWithoutLocation } = order;
+        const { latitude, longitude, user_order_status, ...orderWithoutLocation } = order;
+        const pharmacies = await this.ordersPharmaciesRepository
+        .createQueryBuilder('op')
+        .leftJoinAndSelect('op.pharmacy', 'pharmacy')
+        .select([
+            'op.id',
+            'op.order_id',
+            'op.status_id',
+            'pharmacy.id',
+            'pharmacy.latitude',
+            'pharmacy.longitude',
+        ])
+        .where('op.winner = :winner', { winner: 1 })
+        .andWhere('op.order_id = :orderId', { orderId: order.id })
+        .getMany();
         
-        const [user, location] = await Promise.all([
+        const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+        
+        const [user, pharmacy , pharmacieslocation , location] = await Promise.all([
           this.getUserDetails(order.user_id, 4),
+          this.getUserDetails(pharmacies[0].pharmacy.id, 3),
+          this.baseService.getLocationFromLatLong(pharmacies[0].pharmacy.latitude, pharmacies[0].pharmacy.longitude),
           this.baseService.getLocationFromLatLong(latitude, longitude)
         ]);
-
+        
+        user['location'] = location;
+        pharmacy['location'] = pharmacieslocation
         return {
           ...orderWithoutLocation,
-          location,
+          status: orderStatus,
+          pharmacy: pharmacy,
           userData: user,
         };
       }));
@@ -134,6 +160,85 @@ export class DeliveryMenService {
         error: error.message
       };
     }
+  }
+
+  async getOrdersDetails(orderId: number, req: any) {
+    try {
+      const query = this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.user', 'user')
+        .leftJoinAndSelect('order.userData', 'user_data')
+        .where('order.id = :orderId', { orderId });
+
+      const order = await query
+        .select([
+          'order.id',
+          'order.user_id',
+          'order.user_order_status',
+          'order.delivery_men',
+          'order.latitude',
+          'order.longitude',
+          'order.create_date'
+        ])
+        .getOne();
+
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const { latitude, longitude, user_order_status, ...orderWithoutLocation } = order;
+      
+      const pharmacies = await this.ordersPharmaciesRepository
+        .createQueryBuilder('op')
+        .leftJoinAndSelect('op.pharmacy', 'pharmacy')
+        .select([
+          'op.id',
+          'op.order_id',
+          'op.status_id',
+          'pharmacy.id',
+          'pharmacy.latitude',
+          'pharmacy.longitude',
+        ])
+        .where('op.winner = :winner', { winner: 1 })
+        .andWhere('op.order_id = :orderId', { orderId: order.id })
+        .getOne();
+
+      if (!pharmacies) {
+        throw new NotFoundException('Pharmacy details not found');
+      }
+
+      const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+      
+      const [user, pharmacy, pharmaciesLocation, location] = await Promise.all([
+        this.getUserDetails(order.user_id, 4),
+        this.getUserDetails(pharmacies.pharmacy.id, 3),
+        this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
+        this.baseService.getLocationFromLatLong(latitude, longitude)
+      ]);
+      
+      user['location'] = location;
+      pharmacy['location'] = pharmaciesLocation;
+
+      return {
+        status: 200,
+        message:"Order details fetched successfully",
+        data:{
+          ...orderWithoutLocation,
+        status: orderStatus,
+        pharmacy: pharmacy,
+        userData: user,
+        }
+      };
+    } catch (error) {
+      throw new Error(`Failed to get order details: ${error.message}`);
+    }
+  }
+
+  async getProfileDetails(req: Request) {
+    // const { id } = req.user;
+    // const details = await this.getUserDetails(id, 6);
+
+  
   }
  
 }
