@@ -5,6 +5,15 @@ import { Order } from '../entity/order.entity';
 import { UserData } from 'src/entity/userdata.entity'; // Import UserData entity
 import { BaseService } from 'src/common/services/base.service';
 import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
+import { Request } from 'express';
+import { User } from 'src/entity/user.entity';
+
+interface RequestWithUser extends Request {
+  user: {
+    id: number;
+    role: string;
+  }
+}
 
 @Injectable()
 export class DeliveryMenService {
@@ -17,6 +26,9 @@ export class DeliveryMenService {
 
     @InjectRepository(OrdersPharmacies)
     private ordersPharmaciesRepository: Repository<OrdersPharmacies>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
 
     private baseService: BaseService
   ) {  }
@@ -94,7 +106,7 @@ export class DeliveryMenService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.userData', 'user_data')
-      .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId:12, status: 7 });
+      .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId , status: 7 });
 
     const data = await query
       .select([
@@ -234,11 +246,17 @@ export class DeliveryMenService {
     }
   }
 
-  async getProfileDetails(req: Request) {
-    // const { id } = req.user;
-    // const details = await this.getUserDetails(id, 6);
-
-  
+  async getProfileDetails(req: any) {
+    const { id } = req.user;
+    const data = await this.userRepository.findOne({where:{id: id}})
+    const details = await this.getUserDetails(id, 6);
+    details['phone_number'] = data.phone_number
+    details['phone_code'] = data.phone_code
+    return {
+      status: 200,
+      message: "Profile details fetched successfully",
+      data: details
+    };
   }
  
 }
