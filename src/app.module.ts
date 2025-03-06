@@ -19,6 +19,7 @@ import { AuthGuard } from './guard/auth.guard';
 import { Counties } from './entity/countries.entity';
 import mongoose from 'mongoose';
 // import { DeliveryMen } from './entity/delivery-men.entity';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import mongoose from 'mongoose';
     }),
     AuthModule,
     DeliveryMenModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

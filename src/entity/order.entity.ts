@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from './user.entity'; // Import User entity
 import { UserData } from './userdata.entity';
+import { OrdersPharmacies } from './orders-pharmacies.entity';
 
 @Entity('orders')
 export class Order {
@@ -29,14 +30,17 @@ export class Order {
   create_date: Date;
 
   @ManyToOne(() => User, (user) => user.orders)
-@JoinColumn({ name: 'user_id' })
-user: User;
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-@ManyToOne(() => User, (user) => user.deliveryMenOrders)
-@JoinColumn({ name: 'delivery_men' })
-deliveryMen: User;
+  @ManyToOne(() => User, (user) => user.deliveryMenOrders)
+  @JoinColumn({ name: 'delivery_men' })
+  deliveryMen: User;
 
-@OneToMany(() => UserData, (userData) => userData.order)
-@JoinColumn({ name: 'user_id' })
-userData: UserData[];
+  @OneToMany(() => UserData, (userData) => userData.order)
+  @JoinColumn({ name: 'user_id' })
+  userData: UserData[];
+
+  @OneToMany(() => OrdersPharmacies, (orderPharmacy) => orderPharmacy.order)
+  pharmacies: OrdersPharmacies[];
 }
