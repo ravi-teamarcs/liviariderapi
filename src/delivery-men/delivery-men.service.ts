@@ -129,23 +129,27 @@ export class DeliveryMenService {
         .createQueryBuilder('op')
         .leftJoinAndSelect('op.pharmacy', 'pharmacy')
         .select([
-            'op.id',
-            'op.order_id',
-            'op.status_id',
-            'pharmacy.id',
-            'pharmacy.latitude',
-            'pharmacy.longitude',
+          'op.id',
+          'op.order_id',
+          'op.status_id',
+          'pharmacy.id',
+          'pharmacy.latitude',
+          'pharmacy.longitude',
         ])
         .where('op.winner = :winner', { winner: 1 })
         .andWhere('op.order_id = :orderId', { orderId: order.id })
-        .getMany();
-        
+        .getOne();
+
+      if (!pharmacies) {
+        throw new NotFoundException('Pharmacy details not found');
+      }
+
         const orderStatus = user_order_status === 7 ? 'Delivered' : '';
         
         const [user, pharmacy , pharmacieslocation , location] = await Promise.all([
           this.getUserDetails(order.user_id, 4),
-          this.getUserDetails(pharmacies[0].pharmacy.id, 3),
-          this.baseService.getLocationFromLatLong(pharmacies[0].pharmacy.latitude, pharmacies[0].pharmacy.longitude),
+          this.getUserDetails(pharmacies.pharmacy.id, 3),
+          this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
           this.baseService.getLocationFromLatLong(latitude, longitude)
         ]);
         
