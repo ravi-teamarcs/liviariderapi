@@ -1,15 +1,16 @@
-
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../entity/user.entity';
 import { UserData } from '../../entity/userdata.entity';
 import { Repository } from 'typeorm';
-export class BaseService{
-    private salt?: string;
-    private method?: string;
-    // private userRepository: Repository<User>;
-    private userDataRepository: Repository<UserData>;
+
+export class BaseService {
+  private salt?: string;
+  private method?: string;
+  // private userRepository: Repository<User>;
+  private userDataRepository: Repository<UserData>;
+
   constructor(salt?: string, method?: string) {
     this.salt = salt;
     this.method = method;
@@ -31,31 +32,20 @@ export class BaseService{
       throw new Error('Invalid hashing method');
     }
   }
+
   async getLocationFromLatLong(latitude: any, longitude: any): Promise<string> {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
-  
+
     const response = await fetch(url);
     const data = await response.json();
-  
+
     if (data.status === 'OK' && data.results.length > 0) {
       return data.results[0].formatted_address;
     } else {
       throw new Error('Unable to fetch location from Google Maps API');
     }
   }
-  // async getUserDetails(id: number, role: number) {
-  //   const userDataArray = await this.userDataRepository
-  //     .createQueryBuilder('userData')
-  //     .where('userData.user_id = :id AND userData.role_id = :role', { id, role })
-  //     .getMany();
-  //   const userData = userDataArray.reduce((acc, curr) => {
-  //     acc[curr.field_key] = curr.field_value;
-  //     return acc;
-  //   }, {});
-
-  //   return userData;
-  // }
 
   async getUserDetails(id: number, role: number) {
     const userDataArray = await this.userDataRepository
@@ -69,5 +59,23 @@ export class BaseService{
     }, {});
 
     return userData;
+  }
+
+  async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: any): Promise<{distance: string, duration: string}> {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${apiKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.rows[0]?.elements[0]?.status === 'OK') {
+      const element = data.rows[0].elements[0];
+      return {
+        distance: (element.distance.value / 1000).toFixed(2) + ' km',
+        duration: element.duration.text
+      };
+    } else {
+      throw new Error('Unable to calculate distance using Google Maps API');
+    }
   }
 }

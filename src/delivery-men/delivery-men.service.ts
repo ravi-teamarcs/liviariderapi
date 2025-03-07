@@ -144,22 +144,30 @@ export class DeliveryMenService {
         throw new NotFoundException('Pharmacy details not found');
       }
 
-        const orderStatus = user_order_status === 7 ? 'Delivered' : '';
-        
-        const [user, pharmacy , pharmacieslocation , location] = await Promise.all([
+        const [user, pharmacy, pharmacieslocation, location, distanceInfo] = await Promise.all([
           this.getUserDetails(order.user_id, 4),
           this.getUserDetails(pharmacies.pharmacy.id, 3),
           this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
-          this.baseService.getLocationFromLatLong(latitude, longitude)
+          this.baseService.getLocationFromLatLong(latitude, longitude),
+          this.baseService.calculateDistance(
+            pharmacies.pharmacy.latitude,
+            pharmacies.pharmacy.longitude,
+            latitude,
+            longitude
+          )
         ]);
         
-        user['location'] = location;
-        pharmacy['location'] = pharmacieslocation
+        const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+        
         return {
-          ...orderWithoutLocation,
-          status: orderStatus,
-          pharmacy: pharmacy,
-          userData: user,
+          order_id: order.id,
+          user_details: user,
+          pharmacy_details: pharmacy,
+          pharmacy_location: pharmacieslocation,
+          current_location: location,
+          distance_to_pharmacy: distanceInfo.distance,
+          estimated_time: distanceInfo.duration,
+          status: orderStatus
         };
       }));
 
@@ -223,26 +231,34 @@ export class DeliveryMenService {
         throw new NotFoundException('Pharmacy details not found');
       }
 
-      const orderStatus = user_order_status === 7 ? 'Delivered' : '';
-      
-      const [user, pharmacy, pharmaciesLocation, location] = await Promise.all([
+      const [user, pharmacy, pharmaciesLocation, location, distanceInfo] = await Promise.all([
         this.getUserDetails(order.user_id, 4),
         this.getUserDetails(pharmacies.pharmacy.id, 3),
         this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
-        this.baseService.getLocationFromLatLong(latitude, longitude)
+        this.baseService.getLocationFromLatLong(latitude, longitude),
+        this.baseService.calculateDistance(
+          pharmacies.pharmacy.latitude,
+          pharmacies.pharmacy.longitude,
+          latitude,
+          longitude
+        )
       ]);
+      
+      const orderStatus = user_order_status === 7 ? 'Delivered' : '';
       
       user['location'] = location;
       pharmacy['location'] = pharmaciesLocation;
 
       return {
         status: 200,
-        message:"Order details fetched successfully",
-        data:{
-          ...orderWithoutLocation,
+        message: "Order details fetched successfully",
+        data: {
+        ...order,
         status: orderStatus,
         pharmacy: pharmacy,
         userData: user,
+        distance_to_pharmacy: distanceInfo.distance,
+        estimated_time: distanceInfo.duration
         }
       };
     } catch (error) {
