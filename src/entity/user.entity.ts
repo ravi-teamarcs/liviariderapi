@@ -22,6 +22,9 @@ export class User {
   @Column({ type: 'varchar', length: 20, unique: true })
   phone_number: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  avatar: string;
+
   @Column({ type: 'boolean', default: true })
   status: boolean;
 

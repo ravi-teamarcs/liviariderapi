@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../entity/order.entity'; 
@@ -13,6 +13,18 @@ interface RequestWithUser extends Request {
     id: number;
     role: string;
   }
+}
+
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
 }
 
 @Injectable()
@@ -112,6 +124,7 @@ export class DeliveryMenService {
       .select([
         'order.id',
         'order.user_id',
+        'order.create_date',
         'order.user_order_status',
         'order.delivery_men',
         'order.latitude',
@@ -161,6 +174,7 @@ export class DeliveryMenService {
         
         return {
           order_id: order.id,
+          created_date: order.create_date,
           user_details: user,
           pharmacy_details: pharmacy,
           pharmacy_location: pharmacieslocation,
@@ -272,11 +286,56 @@ export class DeliveryMenService {
     const details = await this.getUserDetails(id, 6);
     details['phone_number'] = data.phone_number
     details['phone_code'] = data.phone_code
+    details['avatar'] = data.avatar
     return {
       status: 200,
       message: "Profile details fetched successfully",
       data: details
     };
   }
+
+  // async uploadProfilePhoto(req: any, files: {profileImage?: MulterFile }) {
+  //   const {id} = req.user;
+  //   const {profileImage} = files;
+  //   const image = await this.baseService.uploadFile(profileImage);
+  //   const update = await this.userRepository.update(id, {avatar: image});
+  
+  // }
  
+  async uploadProfilePhoto(req, file: MulterFile) {
+    try {
+        const { id } = req.user;
+        if(!id) {
+          throw new BadRequestException('User not found');
+        }   
+        const frontFile = file
+
+        if (!frontFile) {
+            throw new BadRequestException('Please provide both front and back ID photos with correct field names');
+        }
+
+        // Create user_data entries for both files
+        // const userDataEntries = [
+        //     {
+        //         user_id: id,
+        //         field_key: 'photo_id_number_frontend',
+        //         field_value: 'uploads/'+frontFile.filename,
+        //         role_id: 6
+        //     },
+        // ];
+        const profile = await this.userRepository.update(id,{
+          avatar: 'uploads/'+frontFile.filename
+        })
+
+        // Save to user_data table
+        // await this.userRepository.save(profile);
+        
+        return {
+            status: 200,
+            message: 'Profilephotos uploaded successfully',
+        };
+    } catch (error) {
+        throw new InternalServerErrorException('Error saving files data: ' + error.message);
+    }
+}
 }

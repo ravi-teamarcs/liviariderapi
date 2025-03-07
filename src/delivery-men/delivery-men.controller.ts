@@ -1,7 +1,19 @@
-import { Controller, Get, Param, Query, Req, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/config/multer.config';
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer: Buffer;
+}
 
 @Controller('delivery-men')
 export class DeliveryMenController {
@@ -36,6 +48,26 @@ export class DeliveryMenController {
     @Req() req: Request,
   ) {
     return this.deliveryMenService.getProfileDetails(req);
+  }
+
+  @Post('/upload-files')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileFieldsInterceptor([
+      { name: 'profileImg', maxCount: 1 }
+  ], multerConfig))
+  async uploadFiles(@Req() req: Request, @UploadedFiles() files: { 
+    profileImg?: MulterFile[],
+  }) {
+      try {
+          if (!files.profileImg?.[0]) {
+              throw new BadRequestException('Please upload profile photo');
+          }
+
+          return await this.deliveryMenService.uploadProfilePhoto(req, files.profileImg[0]);
+      } catch (error) {
+          throw new BadRequestException(error.message);
+      }
   }
 
 }
