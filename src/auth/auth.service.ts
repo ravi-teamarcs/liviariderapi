@@ -75,12 +75,14 @@ export class AuthService {
     });
 
     const role = await this.roleRepository.findOne({ where: { name : ROLE} });
-    const userRole = this.userRoleRepository.create({
-      role_id: role.id,
-      user_id: newUser.id
-    });
+   
     try {
       const savedUser = await this.userRepository.save(newUser);
+
+      const userRole = this.userRoleRepository.create({
+        role_id: role.id,
+        user_id: savedUser.id
+      });
       await this.userRoleRepository.save(userRole);
       // const userExists = await this.userRepository.findOne({ where: { id: newUser.id } });
 
