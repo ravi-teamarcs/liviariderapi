@@ -3,6 +3,14 @@ import { OrderService } from './order.service';
 import { AnyFilesInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
 import { AuthGuard } from 'src/guard/auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Request } from 'express';
+
+declare module 'express' {
+  interface Request {
+    user: any; 
+  }
+}
 
 // Define the Multer file type
 interface MulterFile {
@@ -24,6 +32,13 @@ export class OrderController {
     @Get()
     async getOrders() {
         return await this.orderService.getOrders();
+    }
+
+    @Get('/getAssignedOrders')
+    @UseGuards(AuthGuard)
+    @ApiBearerAuth()
+    async getAssignedOrders(@Req() req: Request) {
+        return await this.orderService.getAssignedOrders(req);
     }
 
     // @Post('upload')

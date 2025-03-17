@@ -7,6 +7,13 @@ import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 import { User } from 'src/entity/user.entity';
 import { DeliveryBoyWithDistance } from './interfaces/delivery-boy.interface';
 import axios from 'axios';
+import { Request } from 'express';
+
+declare module 'express' {
+  interface Request {
+    user: any; 
+  }
+}
 
 // Define the Multer file type
 interface MulterFile {
@@ -234,6 +241,46 @@ export class OrderService {
         } else {
             return { status: 200, message: "There is no new order to assign" };
         }
+    }
+
+    async getUserDetails(id: number, role: number) {
+        const userDataArray = await this.userDataRepository
+          .createQueryBuilder('userData')
+          .where('userData.user_id = :id AND userData.role_id = :role', { id, role })
+          .getMany();
+    
+        const userData = userDataArray.reduce((acc, curr) => {
+          acc[curr.field_key] = curr.field_value;
+          return acc;
+        }, {});
+    
+        return userData;
+      }
+
+    async getAssignedOrders(req: Request) {
+        const { id } = req?.user;
+        const result = await this.orderRepository.find({
+            where: {
+                delivery_men: id,
+                user_order_status:4,
+            },
+            order: {
+                id: 'DESC',
+            },
+        });
+        await Promise.all(result.map(async (order) => {
+            const userData = await this.getUserDetails(order.user_id, 4);
+            order.userData = Array.isArray(userData) ? userData : [userData];
+            delete order.user_id;
+            delete order.delivery_men;
+            delete order.user_order_status;
+            delete order.country;
+            delete order.city_id;
+            delete order.latitude;
+            delete order.longitude;
+            // order.status = 'Assigned Order'
+        }));
+        return { status: 200, message: 'Assigned orders fetched successfully', data: result};
     }
 
     // async saveFileData(file: MulterFile) {
