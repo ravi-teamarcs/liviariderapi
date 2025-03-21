@@ -1,8 +1,10 @@
-import { BadRequestException, Controller, Get, Param, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
+import { AddAcountDto } from './dto/delivery-men.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 interface MulterFile {
   fieldname: string;
   originalname: string;
@@ -69,5 +71,17 @@ export class DeliveryMenController {
           throw new BadRequestException(error.message);
       }
   }
+
+  @Post('/addAccount')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async addAccount(
+    @Body() addAccountDto: AddAcountDto,
+    @Req() req: Request,
+  ){
+    return await this.deliveryMenService.addAccount(addAccountDto, req);
+  }
+
 
 }
