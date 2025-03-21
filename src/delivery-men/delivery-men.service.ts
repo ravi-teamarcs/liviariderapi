@@ -7,6 +7,8 @@ import { BaseService } from 'src/common/services/base.service';
 import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 import { Request } from 'express';
 import { User } from 'src/entity/user.entity';
+import { AddAcountDto } from './dto/delivery-men.dto';
+import { UserPayData } from 'src/entity/userPayData.entity';
 
 interface RequestWithUser extends Request {
   user: {
@@ -41,6 +43,9 @@ export class DeliveryMenService {
 
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(UserPayData)
+    private userPayDataRepository: Repository<UserPayData>,
 
     private baseService: BaseService
   ) {  }
@@ -338,4 +343,78 @@ export class DeliveryMenService {
         throw new InternalServerErrorException('Error saving files data: ' + error.message);
     }
 }
+
+  async addAccount(addAccountDto: AddAcountDto, req: any) {
+    const { id } = req.user;
+    const { account_number, pay_system, pay_type , IFSC, customer_id, number } = addAccountDto;
+    if(pay_type === 'bankaccount'){
+      if(!account_number || !IFSC || !customer_id){
+        throw new BadRequestException('Please provide Account Number, IFSC and Customer ID');
+      }
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'account_number',
+      field_value: account_number,
+      role_id: 6
+    });
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'IFSC',
+      field_value: IFSC,
+      role_id: 6
+    });
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'customer_id',
+      field_value: customer_id,
+      role_id: 6
+    });
+  }else if(pay_type==='tillnumbers'){
+    if(!number){
+      throw new BadRequestException('Please provide Number');
+    }
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'number',
+      field_value: number,
+    });
+
+  }else if(pay_type==='paybill'){
+    if(!number){
+      throw new BadRequestException('Please provide Number');
+    }
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'number',
+      field_value: number,
+    });
+
+  }else if(pay_type==='phone'){
+    if(!number){
+      throw new BadRequestException('Please provide Number');
+    }
+    await this.userPayDataRepository.save({
+      user_id: id,
+      pay_system: pay_system,
+      pay_type: pay_type,
+      field_key: 'number',
+      field_value: number,
+    });
+  }
+    return {
+      status: 200,
+      message: "Account details added successfully",
+    };
+  }
+
 }
