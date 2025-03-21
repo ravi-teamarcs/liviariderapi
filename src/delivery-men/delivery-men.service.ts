@@ -416,5 +416,36 @@ export class DeliveryMenService {
       message: "Account details added successfully",
     };
   }
-
+  
+  async getAccounts(req: any) {
+    try {
+      const { id } = req.user;
+      const records = await this.userPayDataRepository.find({ where: { user_id: id } });
+    
+      const grouped: Record<string, any> = {};
+    
+      for (const item of records) {
+        const { pay_type, pay_system, field_key, field_value } = item;
+    
+        if (!grouped[pay_type]) {
+          grouped[pay_type] = { pay_type, pay_system };
+        }
+    
+        grouped[pay_type][field_key] = field_value;
+      }
+    
+      const data = Object.values(grouped);
+    
+      return {
+        status: 200,
+        message: "Account details fetched successfully",
+        data
+      };
+    } catch (error) {
+      throw new Error(`Failed to get account details: ${error.message}`);
+      
+    }
+   
+  }
+  
 }

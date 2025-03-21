@@ -1,7 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
-import { IsNull } from "typeorm";
-
 export class AddAcountDto {
     @ApiProperty({ example: '123456789789'})
     @IsString()

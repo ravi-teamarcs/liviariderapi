@@ -83,5 +83,22 @@ export class DeliveryMenController {
     return await this.deliveryMenService.addAccount(addAccountDto, req);
   }
 
+  @Post('/GetAccountDetails')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async getAccounts(
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.getAccounts(req);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+      
+    }
+  }
+
+
+  
 
 }
