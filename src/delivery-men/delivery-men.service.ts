@@ -410,13 +410,15 @@ export class DeliveryMenService {
       field_key: 'number',
       field_value: number,
     });
+  }else{
+    throw new BadRequestException('Please provide a valid pay type');
   }
     return {
       status: 200,
       message: "Account details added successfully",
     };
   }
-  
+
   async getAccounts(req: any) {
     try {
       const { id } = req.user;
@@ -425,13 +427,14 @@ export class DeliveryMenService {
       const grouped: Record<string, any> = {};
     
       for (const item of records) {
-        const { pay_type, pay_system, field_key, field_value } = item;
+        const { pay_type, pay_system, field_key, field_value,priority } = item;
     
         if (!grouped[pay_type]) {
           grouped[pay_type] = { pay_type, pay_system };
         }
     
         grouped[pay_type][field_key] = field_value;
+        grouped[pay_type]['priority'] = priority;
       }
     
       const data = Object.values(grouped);
@@ -447,5 +450,31 @@ export class DeliveryMenService {
     }
    
   }
+
+  
+  async updateAccountPriority(req: any, body: any) {
+    try {
+      const { id } = req.user;
+      const  {pay_type , priority }  = body;
+      const records = await this.userPayDataRepository.find({ where: { user_id: id, pay_type } });
+
+      if (!records.length) {
+        throw new NotFoundException('Account details not found');
+      }
+
+      await this.userPayDataRepository.update({ user_id: id, pay_type }, { priority: priority });
+      return {
+        status: 200,
+        message: "Account priority updated successfully",
+      };
+
+    } catch (error) {
+      throw new Error(`Failed to get account details: ${error.message}`);
+      
+    }
+   
+  }
+
+
   
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
+
 export class AddAcountDto {
     @ApiProperty({ example: '123456789789'})
     @IsString()
@@ -29,5 +30,20 @@ export class AddAcountDto {
     @IsString()
     @IsOptional()
     number?: string;
+
+}
+
+export class UpdateAcountPriorityDto {
+
+    @ApiProperty({ example: 'bankaccount'})
+    @IsString()
+    @IsOptional()
+    pay_type?: string;
+
+    @ApiProperty({ example: 1, required: false, default: 0, enum: [0, 1] })
+    @IsOptional()
+    @IsIn([0, 1])
+    priority?: number;
+
 
 }

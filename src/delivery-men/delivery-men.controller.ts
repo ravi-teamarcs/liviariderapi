@@ -3,7 +3,7 @@ import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
-import { AddAcountDto } from './dto/delivery-men.dto';
+import { AddAcountDto, UpdateAcountPriorityDto } from './dto/delivery-men.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 interface MulterFile {
   fieldname: string;
@@ -97,6 +97,24 @@ export class DeliveryMenController {
       
     }
   }
+
+
+  @Post('/updateAccountPriority')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async updateAccountPriority(
+    @Body() priority: UpdateAcountPriorityDto,
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.updateAccountPriority(req, priority);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+      
+    }
+  }
+
 
 
   

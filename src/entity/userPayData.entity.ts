@@ -8,7 +8,7 @@ export class UserPayData {
     @PrimaryColumn({ type: 'varchar', length: 50 })
     pay_system: string;
 
-    @Column({ type: 'varchar', length: 255 })
+    @PrimaryColumn({ type: 'varchar', length: 255 })
     pay_type: string;
 
     @PrimaryColumn({ type: 'varchar', length: 50 })
