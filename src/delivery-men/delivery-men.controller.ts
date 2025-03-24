@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Query, Req, UploadedFiles, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -116,6 +116,21 @@ export class DeliveryMenController {
   }
 
 
+  @Delete('/deleteAccount')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async deleteAccount(
+    @Body() account: AddAcountDto,
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.deleteAccount(req, account);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+      
+    }
+  }
 
   
 

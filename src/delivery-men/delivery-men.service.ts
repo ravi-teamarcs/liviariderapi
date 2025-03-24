@@ -476,5 +476,45 @@ export class DeliveryMenService {
   }
 
 
+  async deleteAccount(req: any, body: any) {
+    try {
+      const { id } = req.user;
+      const { account_number, pay_system, pay_type , IFSC, customer_id, number } = body;
+      if(pay_type === 'bankaccount'){
+        if(!account_number || !IFSC || !customer_id){
+          throw new BadRequestException('Please provide Account Number, IFSC and Customer ID');
+        }
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'account_number', field_value: account_number });
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'IFSC', field_value: IFSC });
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'customer_id', field_value: customer_id });
+    }else if(pay_type==='tillnumbers'){
+      if(!number){
+        throw new BadRequestException('Please provide Number');
+      }
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'number', field_value: number });
+  
+    }else if(pay_type==='paybill'){
+      if(!number){
+        throw new BadRequestException('Please provide Number');
+      }
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'number', field_value: number });
+  
+    }else if(pay_type==='phone'){
+      if(!number){
+        throw new BadRequestException('Please provide Number');
+      }
+      await this.userPayDataRepository.delete({ user_id: id, pay_type, field_key: 'number', field_value: number });
+    }else{
+      throw new BadRequestException('Please provide a valid pay type');
+    }
+      return {
+        status: 200,
+        message: "Account details deleted successfully",
+      };
+    } catch (error) {
+      throw new Error(`Failed to delete account details: ${error.message}`);
+      
+    }
+  }
   
 }
