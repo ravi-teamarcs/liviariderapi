@@ -10,6 +10,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { OrderGateway } from './order.gateway';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ConfigModule
   ],
   controllers: [OrderController],
-  providers: [OrderService]
+  providers: [OrderService,OrderGateway]
 })
 export class OrderModule {}

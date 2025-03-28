@@ -9,6 +9,7 @@ import { Request } from 'express';
 import { User } from 'src/entity/user.entity';
 import { AddAcountDto } from './dto/delivery-men.dto';
 import { UserPayData } from 'src/entity/userPayData.entity';
+import { Faq } from 'src/entity/faq.entity';
 
 interface RequestWithUser extends Request {
   user: {
@@ -46,6 +47,9 @@ export class DeliveryMenService {
 
     @InjectRepository(UserPayData)
     private userPayDataRepository: Repository<UserPayData>,
+
+    @InjectRepository(Faq)
+    private faqRepository: Repository<Faq>,
 
     private baseService: BaseService
   ) {  }
@@ -516,5 +520,64 @@ export class DeliveryMenService {
       
     }
   }
+
+
+  async getFaq(req: any, lang: any) {
+    const {id , role_id} = req.user;
+    const data = await this.faqRepository.find({where:{lang: lang.lang, role_id: role_id}, select:["question","answer","lang","sorting"]});
+    if (!data) {
+      throw new NotFoundException('FAQ not found');
+    }
+    return {
+      status: 200,
+      message: "FAQ fetched successfully",
+      data: data
+    };
+  }
+
+  async getReport(req: any) {
+    const data = [{
+      totalEarning: 645.99,
+      totalOrders: 100,
+      avgTime: "23hrs 45mins",
+      rating: 4.5,
+    }]
+    return {
+      status: 200,
+      message: "Report fetched successfully",
+      data: data
+    };  
+  }
+
+  async getPaymentList(req: any) {
+    const data = [
+      {
+      orderNumber: 7924,
+      amount:18,
+      date: "2023-Feb-01",
+      time:"12:30 PM",
+      },
+      {
+      orderNumber: 8524,
+      amount:10,
+      date: "2023-Mar-16",
+      time:"2:08 PM",
+      },
+      {
+      orderNumber: 9624,
+      amount:12,
+      date: "2023-May-12",
+      time:"8:16 PM",
+      },
+  ]
+
+  return {
+    status: 200,
+    message: "Payment list fetched successfully",
+    data: data
+  };
+
+  }
+
   
 }

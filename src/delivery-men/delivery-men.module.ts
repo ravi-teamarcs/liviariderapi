@@ -10,9 +10,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 import { User } from 'src/entity/user.entity';
 import { UserPayData } from 'src/entity/userPayData.entity';
+import { Faq } from 'src/entity/faq.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User ,Order, UserData, OrdersPharmacies, UserPayData]),
+  imports: [TypeOrmModule.forFeature([User ,Order, UserData, OrdersPharmacies, UserPayData, Faq]),
   JwtModule.register({
     secret: process.env.JWT_SECRET || 'raider',
     signOptions: { expiresIn: process.env.EXPIRESIN || '1h' },

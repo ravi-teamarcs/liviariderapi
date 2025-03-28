@@ -20,6 +20,8 @@ import { Counties } from './entity/countries.entity';
 import mongoose from 'mongoose';
 // import { DeliveryMen } from './entity/delivery-men.entity';
 import { OrderModule } from './order/order.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { Faq } from './entity/faq.entity';
 
 @Module({
   imports: [
@@ -37,7 +39,8 @@ import { OrderModule } from './order/order.module';
       entities: [join(process.cwd(), 'dist/**/*.entity.js')],
       synchronize: false,
     }),
-    TypeOrmModule.forFeature([Order, UserData, Counties]),
+    ScheduleModule.forRoot(),
+    TypeOrmModule.forFeature([Order, UserData, Counties, Faq]),
     JwtModule.register({
       global: false,
     }),

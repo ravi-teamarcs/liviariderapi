@@ -47,3 +47,9 @@ export class UpdateAcountPriorityDto {
 
 
 }
+
+export class Faq{
+    @ApiProperty({ example: 'en'})
+    @IsString()
+    lang:string;
+}

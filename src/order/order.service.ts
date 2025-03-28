@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException,OnModuleInit  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserData } from 'src/entity/userdata.entity';
@@ -8,6 +8,8 @@ import { User } from 'src/entity/user.entity';
 import { DeliveryBoyWithDistance } from './interfaces/delivery-boy.interface';
 import axios from 'axios';
 import { Request } from 'express';
+import * as amqp from 'amqplib';
+import { Cron } from '@nestjs/schedule';
 
 declare module 'express' {
   interface Request {
@@ -29,6 +31,7 @@ interface MulterFile {
 }
 
 @Injectable()
+// export class OrderService implements OnModuleInit {
 export class OrderService {
     constructor(
         @InjectRepository(UserData)
@@ -40,6 +43,76 @@ export class OrderService {
         @InjectRepository(User)
         private userRepository: Repository<User>
     ) {}
+    
+    private readonly QUEUE_NAME = 'new_orders';
+
+    // async onModuleInit() {
+    //     const connection = await amqp.connect('amqp://localhost');
+    //     const channel = await connection.createChannel();
+    //     await channel.assertQueue(this.QUEUE_NAME);
+    //     console.log(channel)
+    //     console.log('Listening for new orders...');
+
+    //     channel.consume(this.QUEUE_NAME, async (msg) => {
+    //         if (msg !== null) {
+    //             const orderData = JSON.parse(msg.content.toString());
+    //             console.log('New order received:', orderData);
+    //             await this.getOrders();
+    //             channel.ack(msg);
+    //         }
+    //     });
+    // }
+
+    // async onModuleInit() {
+    //     try {
+    //         const connection = await amqp.connect('amqp://localhost');
+    //         console.log('✅ Connected to RabbitMQ successfully');
+    
+    //         const channel = await connection.createChannel();
+    //         await channel.assertQueue('new_orders');
+            
+    //         console.log(`✅ Listening for messages in queue: new_orders`);
+    //         channel.consume('new_orders', async (msg) => {
+    //             if (msg !== null) {
+    //                 console.log('✅ Received message:', msg.content.toString());
+    
+    //                 const orderData = JSON.parse(msg.content.toString());
+    //                 console.log('Processing Order:', orderData);
+    
+    //                 await this.getOrders(); // Ensure this function runs successfully
+    //                 console.log('✅ getOrders() function executed successfully');
+    
+    //                 channel.ack(msg);
+    //             } else {
+    //                 console.warn('⚠️ Received NULL message');
+    //             }
+    //         });
+    //     } catch (error) {
+    //         console.error('❌ Error connecting to RabbitMQ:', error);
+    //     }
+    // }
+
+    @Cron('*/5 * * * * *')
+    async checkForNewOrders() {
+        const newOrders = await this.orderRepository.findOne({
+            where: {
+                delivery_men: null,
+            },
+            order: {
+                id: 'DESC',
+            },
+        });
+
+        if (newOrders?.delivery_men===null) {
+            console.log('New order detected!');
+            await this.getOrders();
+        }
+    }
+
+
+    
+    
+    
 
     async calculateDistance(
         origin: { lat: number; lng: number },

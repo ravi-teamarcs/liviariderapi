@@ -3,7 +3,7 @@ import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
-import { AddAcountDto, UpdateAcountPriorityDto } from './dto/delivery-men.dto';
+import { AddAcountDto, Faq, UpdateAcountPriorityDto } from './dto/delivery-men.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 interface MulterFile {
   fieldname: string;
@@ -132,6 +132,48 @@ export class DeliveryMenController {
     }
   }
 
+  @Post('/faq')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async getFaq(
+    @Body() lang: Faq,
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.getFaq(req, lang);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+      
+    }
   
+  }
 
+  @Get('/report')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async getReport(
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.getReport(req);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  @Get('/paymentList')
+  @UsePipes(ValidationPipe)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async getPaymentList(
+    @Req() req: Request,
+  ){
+    try {
+      return await this.deliveryMenService.getPaymentList(req);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 }
