@@ -46,6 +46,7 @@ export class BaseService {
       throw new Error('Unable to fetch location from Google Maps API');
     }
   }
+  
 
   async getUserDetails(id: number, role: number) {
     const userDataArray = await this.userDataRepository
