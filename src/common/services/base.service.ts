@@ -36,7 +36,7 @@ export class BaseService {
   async getLocationFromLatLong(latitude: any, longitude: any): Promise<string> {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
-
+    console.log(url)
     const response = await fetch(url);
     const data = await response.json();
 
@@ -46,7 +46,7 @@ export class BaseService {
       throw new Error('Unable to fetch location from Google Maps API');
     }
   }
-  
+
 
   async getUserDetails(id: number, role: number) {
     const userDataArray = await this.userDataRepository
