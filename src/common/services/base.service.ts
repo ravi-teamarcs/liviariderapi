@@ -39,7 +39,8 @@ export class BaseService {
     console.log(url)
     const response = await fetch(url);
     const data = await response.json();
-
+    console.log(data)
+    console.log(data.status)
     if (data.status === 'OK' && data.results.length > 0) {
       return data.results[0].formatted_address;
     } else {
