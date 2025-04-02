@@ -8,6 +8,7 @@ import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
 import { Request } from 'express';
 import { User } from 'src/entity/user.entity';
 import { AddAcountDto } from './dto/delivery-men.dto';
+import pLimit from 'p-limit';
 import { UserPayData } from 'src/entity/userPayData.entity';
 import { Faq } from 'src/entity/faq.entity';
 
@@ -119,16 +120,105 @@ export class DeliveryMenService {
     return userData;
   }
 
+  // async getOrdersByDeliveryMen(req: any) {
+  //   const { id } = req.user;
+  //   const deliveryMenId = id;
+    
+  //   const query = this.orderRepository
+  //     .createQueryBuilder('order')
+  //     .leftJoinAndSelect('order.user', 'user')
+  //     .leftJoinAndSelect('order.userData', 'user_data')
+  //     .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId , status: 7 });
+
+  //   const data = await query
+  //     .select([
+  //       'order.id',
+  //       'order.user_id',
+  //       'order.create_date',
+  //       'order.user_order_status',
+  //       'order.delivery_men',
+  //       'order.latitude',
+  //       'order.longitude',
+  //       'order.country',
+  //       'order.city_id',
+  //       'order.create_date',
+  //     ])
+  //     .getMany();
+
+  //   try {
+  //     const result = await Promise.all(data.map(async (order) => {
+  //       const { latitude, longitude, user_order_status, ...orderWithoutLocation } = order;
+  //       const pharmacies = await this.ordersPharmaciesRepository
+  //       .createQueryBuilder('op')
+  //       .leftJoinAndSelect('op.pharmacy', 'pharmacy')
+  //       .select([
+  //         'op.id',
+  //         'op.order_id',
+  //         'op.status_id',
+  //         'pharmacy.id',
+  //         'pharmacy.latitude',
+  //         'pharmacy.longitude',
+  //       ])
+  //       .where('op.winner = :winner', { winner: 1 })
+  //       .andWhere('op.order_id = :orderId', { orderId: order.id })
+  //       .getOne();
+
+  //     if (!pharmacies) {
+  //       throw new NotFoundException('Pharmacy details not found');
+  //     }
+
+  //       const [user, pharmacy, pharmacieslocation, location, distanceInfo] = await Promise.all([
+  //         this.getUserDetails(order.user_id, 4),
+  //         this.getUserDetails(pharmacies.pharmacy.id, 3),
+  //         this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
+  //         this.baseService.getLocationFromLatLong(latitude, longitude),
+  //         this.baseService.calculateDistance(
+  //           pharmacies.pharmacy.latitude,
+  //           pharmacies.pharmacy.longitude,
+  //           latitude,
+  //           longitude
+  //         )
+  //       ]);
+        
+  //       const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+        
+  //       return {
+  //         order_id: order.id,
+  //         created_date: order.create_date,
+  //         user_details: user,
+  //         pharmacy_details: pharmacy,
+  //         pharmacy_location: pharmacieslocation,
+  //         current_location: location,
+  //         distance_to_pharmacy: distanceInfo.distance,
+  //         estimated_time: distanceInfo.duration,
+  //         status: orderStatus
+  //       };
+  //     }));
+
+  //     return { 
+  //       status: 200, 
+  //       message: 'Orders fetched successfully', 
+  //       data: result 
+  //     };
+  //   } catch (error) {
+  //     console.error('Error processing orders:', error);
+  //     return {
+  //       status: 500,
+  //       message: 'Error processing orders',
+  //       error: error.message
+  //     };
+  //   }
+  // }
   async getOrdersByDeliveryMen(req: any) {
     const { id } = req.user;
     const deliveryMenId = id;
-    
+  
     const query = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.userData', 'user_data')
-      .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId , status: 7 });
-
+      .where('order.delivery_men = :deliveryMenId AND order.user_order_status = :status', { deliveryMenId, status: 7 });
+  
     const data = await query
       .select([
         'order.id',
@@ -143,62 +233,68 @@ export class DeliveryMenService {
         'order.create_date',
       ])
       .getMany();
-
+  
+    const limit = pLimit(3); // max 3 concurrent tasks
+  
     try {
-      const result = await Promise.all(data.map(async (order) => {
-        const { latitude, longitude, user_order_status, ...orderWithoutLocation } = order;
-        const pharmacies = await this.ordersPharmaciesRepository
-        .createQueryBuilder('op')
-        .leftJoinAndSelect('op.pharmacy', 'pharmacy')
-        .select([
-          'op.id',
-          'op.order_id',
-          'op.status_id',
-          'pharmacy.id',
-          'pharmacy.latitude',
-          'pharmacy.longitude',
-        ])
-        .where('op.winner = :winner', { winner: 1 })
-        .andWhere('op.order_id = :orderId', { orderId: order.id })
-        .getOne();
-
-      if (!pharmacies) {
-        throw new NotFoundException('Pharmacy details not found');
-      }
-
-        const [user, pharmacy, pharmacieslocation, location, distanceInfo] = await Promise.all([
-          this.getUserDetails(order.user_id, 4),
-          this.getUserDetails(pharmacies.pharmacy.id, 3),
-          this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
-          this.baseService.getLocationFromLatLong(latitude, longitude),
-          this.baseService.calculateDistance(
-            pharmacies.pharmacy.latitude,
-            pharmacies.pharmacy.longitude,
-            latitude,
-            longitude
-          )
-        ]);
-        
-        const orderStatus = user_order_status === 7 ? 'Delivered' : '';
-        
-        return {
-          order_id: order.id,
-          created_date: order.create_date,
-          user_details: user,
-          pharmacy_details: pharmacy,
-          pharmacy_location: pharmacieslocation,
-          current_location: location,
-          distance_to_pharmacy: distanceInfo.distance,
-          estimated_time: distanceInfo.duration,
-          status: orderStatus
-        };
-      }));
-
-      return { 
-        status: 200, 
-        message: 'Orders fetched successfully', 
-        data: result 
+      const result = await Promise.all(data.map(order => 
+        limit(async () => {
+          const { latitude, longitude, user_order_status, ...orderWithoutLocation } = order;
+  
+          const pharmacies = await this.ordersPharmaciesRepository
+            .createQueryBuilder('op')
+            .leftJoinAndSelect('op.pharmacy', 'pharmacy')
+            .select([
+              'op.id',
+              'op.order_id',
+              'op.status_id',
+              'pharmacy.id',
+              'pharmacy.latitude',
+              'pharmacy.longitude',
+            ])
+            .where('op.winner = :winner', { winner: 1 })
+            .andWhere('op.order_id = :orderId', { orderId: order.id })
+            .getOne();
+  
+          if (!pharmacies) {
+            throw new NotFoundException('Pharmacy details not found');
+          }
+  
+          const [user, pharmacy, pharmacieslocation, location, distanceInfo] = await Promise.all([
+            this.getUserDetails(order.user_id, 4),
+            this.getUserDetails(pharmacies.pharmacy.id, 3),
+            this.baseService.getLocationFromLatLong(pharmacies.pharmacy.latitude, pharmacies.pharmacy.longitude),
+            this.baseService.getLocationFromLatLong(latitude, longitude),
+            this.baseService.calculateDistance(
+              pharmacies.pharmacy.latitude,
+              pharmacies.pharmacy.longitude,
+              latitude,
+              longitude
+            )
+          ]);
+  
+          const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+  
+          return {
+            order_id: order.id,
+            created_date: order.create_date,
+            user_details: user,
+            pharmacy_details: pharmacy,
+            pharmacy_location: pharmacieslocation,
+            current_location: location,
+            distance_to_pharmacy: distanceInfo.distance,
+            estimated_time: distanceInfo.duration,
+            status: orderStatus
+          };
+        })
+      ));
+  
+      return {
+        status: 200,
+        message: 'Orders fetched successfully',
+        data: result
       };
+  
     } catch (error) {
       console.error('Error processing orders:', error);
       return {

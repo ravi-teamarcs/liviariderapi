@@ -33,20 +33,46 @@ export class BaseService {
     }
   }
 
+  // async getLocationFromLatLong(latitude: any, longitude: any): Promise<string> {
+  //   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  //   const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
+  //   console.log(url)
+  //   const response = await fetch(url);
+  //   const data = await response.json();
+  //   console.log(data)
+  //   console.log(data.status)
+  //   if (data.status === 'OK' && data.results.length > 0) {
+  //     return data.results[0].formatted_address;
+  //   } else {
+  //     throw new Error('Unable to fetch location from Google Maps API');
+  //   }
+  // }
   async getLocationFromLatLong(latitude: any, longitude: any): Promise<string> {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
-    console.log(url)
-    const response = await fetch(url);
-    const data = await response.json();
-    console.log(data)
-    console.log(data.status)
-    if (data.status === 'OK' && data.results.length > 0) {
-      return data.results[0].formatted_address;
-    } else {
-      throw new Error('Unable to fetch location from Google Maps API');
+    try {
+      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
+      console.log('Fetching:', url);
+  
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+  
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+  
+      const data = await response.json();
+      console.log('Response:', data);
+  
+      if (data.status === 'OK' && data.results.length > 0) {
+        return data.results[0].formatted_address;
+      }
+  
+      return 'Unknown Location';
+    } catch (error) {
+      console.error('Fetch error:', error.message || error);
+      return 'Unknown Location';
     }
   }
+  
 
 
   async getUserDetails(id: number, role: number) {
