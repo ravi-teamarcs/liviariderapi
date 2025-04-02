@@ -89,21 +89,52 @@ export class BaseService {
     return userData;
   }
 
-  async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: any): Promise<{distance: string, duration: string}> {
+//   async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: any): Promise<{distance: string, duration: string}> {
+//     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+//     const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${apiKey}`;
+
+//     const response = await fetch(url);
+//     const data = await response.json();
+
+//     if (data.status === 'OK' && data.rows[0]?.elements[0]?.status === 'OK') {
+//       const element = data.rows[0].elements[0];
+//       return {
+//         distance: (element.distance.value / 1000).toFixed(2) + ' km',
+//         duration: element.duration.text
+//       };
+//     } else {
+//       throw new Error('Unable to calculate distance using Google Maps API');
+//     }
+//   }
+// }
+async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: any): Promise<{ distance: string, duration: string }> {
+  try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${apiKey}`;
+    console.log('Distance API URL:', url);
 
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
     const data = await response.json();
+    console.log('Distance API Response:', JSON.stringify(data));
 
-    if (data.status === 'OK' && data.rows[0]?.elements[0]?.status === 'OK') {
+    if (data.status === 'OK' && data.rows?.[0]?.elements?.[0]?.status === 'OK') {
       const element = data.rows[0].elements[0];
       return {
         distance: (element.distance.value / 1000).toFixed(2) + ' km',
         duration: element.duration.text
       };
     } else {
-      throw new Error('Unable to calculate distance using Google Maps API');
+      console.error('Google Maps API Distance Error:', data.status);
+      return { distance: 'Unknown', duration: 'Unknown' };
     }
+  } catch (error) {
+    console.error('Fetch error in calculateDistance:', error.message || error);
+    return { distance: 'Unknown', duration: 'Unknown' };
   }
+}
 }
