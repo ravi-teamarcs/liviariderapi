@@ -64,7 +64,7 @@ export class BaseService {
         return data.results[0].formatted_address;
       }
   
-      return 'Unknown Location';
+      return 'Unknown Locations';
     } catch (error) {
       console.error('Fetch error:', error.message || error);
       return 'Unknown Location';
