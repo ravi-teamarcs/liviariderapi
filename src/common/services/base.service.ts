@@ -51,7 +51,6 @@ export class BaseService {
     try {
       const apiKey = process.env.GOOGLE_MAPS_API_KEY;
       const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
-      console.log('Fetching:', url);
   
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
@@ -60,7 +59,6 @@ export class BaseService {
       clearTimeout(timeout);
   
       const data = await response.json();
-      console.log('Response:', data);
   
       if (data.status === 'OK' && data.results.length > 0) {
         return data.results[0].formatted_address;

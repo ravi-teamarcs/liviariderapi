@@ -367,7 +367,12 @@ export class DeliveryMenService {
       
       user['location'] = location;
       pharmacy['location'] = pharmaciesLocation;
-
+      pharmacy['latitude'] = pharmacies.pharmacy.latitude;
+      pharmacy['longitude'] = pharmacies.pharmacy.longitude;
+      user['latitude'] = latitude;
+      user['longitude'] = longitude;
+      delete order.latitude;
+      delete order.longitude;
       return {
         status: 200,
         message: "Order details fetched successfully",
