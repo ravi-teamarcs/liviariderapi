@@ -105,18 +105,9 @@ export class BaseService {
 async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: any): Promise<{ distance: string, duration: string }> {
   try {
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${apiKey}`;
-    console.log('Distance API URL:', url);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    const data = await response.json();
-    console.log('Distance API Response:', JSON.stringify(data));
-
+    const url = `${process.env.GOOGLE_MAPS_API_DISTANCE_URL}?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${apiKey}`;
+    const response = await axios.get(url, { timeout: 5000 });
+    const data = response.data;
     if (data.status === 'OK' && data.rows?.[0]?.elements?.[0]?.status === 'OK') {
       const element = data.rows[0].elements[0];
       return {
@@ -127,8 +118,8 @@ async calculateDistance(originLat: any, originLng: any, destLat: any, destLng: a
       console.error('Google Maps API Distance Error:', data.status);
       return { distance: 'Unknown', duration: 'Unknown' };
     }
-  } catch (error) {
-    console.error('Fetch error in calculateDistance:', error.message || error);
+  } catch (error: any) {
+    console.error('Axios error in calculateDistance:', error.message || error);
     return { distance: 'Unknown', duration: 'Unknown' };
   }
 }
