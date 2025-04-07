@@ -35,7 +35,7 @@ export class LoginDto {
 }
 
 export class VerifyOtpDto {
-  @ApiProperty({example:'xxxxxxxx'})
+  @ApiProperty({example:123456})
   @IsNumber()
   @IsNotEmpty()
   id: number;
@@ -44,6 +44,11 @@ export class VerifyOtpDto {
   @IsString()
   @IsNotEmpty()
   otp: string;
+
+  @ApiProperty({example:'xxxx'})
+  @IsString()
+  @IsNotEmpty()
+  fcmToken: string;
 }
 
 export class RegisterVerifyOTP {

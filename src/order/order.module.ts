@@ -11,10 +11,12 @@ import { multerConfig } from 'src/config/multer.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OrderGateway } from './order.gateway';
+import { AuthToken } from 'src/entity/auth-token.entity';
+import { FirebaseService } from 'src/firebase/firebase.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, UserData, OrdersPharmacies, User]),
+    TypeOrmModule.forFeature([Order, UserData, OrdersPharmacies, User, AuthToken]),
     MulterModule.register(multerConfig),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -27,6 +29,6 @@ import { OrderGateway } from './order.gateway';
     ConfigModule
   ],
   controllers: [OrderController],
-  providers: [OrderService,OrderGateway]
+  providers: [OrderService,OrderGateway,FirebaseService]
 })
 export class OrderModule {}

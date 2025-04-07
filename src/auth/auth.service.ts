@@ -19,6 +19,7 @@ import { ResendOtpDto } from './dto/login.dto';
 import { UserRole } from 'src/entity/user-role.entity';
 import { Role } from 'src/entity/role.entity';
 import { ROLE } from 'src/common/constants/config.json';
+import { AuthToken } from 'src/entity/auth-token.entity';
 
 interface MulterFile {
   fieldname: string;
@@ -42,6 +43,7 @@ export class AuthService {
     @InjectRepository(Counties) private countryRepository: Repository<Counties>,
     @InjectRepository(UserRole) private userRoleRepository: Repository<UserRole>,
     @InjectRepository(Role) private roleRepository: Repository<Role>,
+    @InjectRepository(AuthToken) private authTokenRepo: Repository<AuthToken>,
     private configService: ConfigService,
     private jwtService: JwtService, 
   ) { this.baseService = new BaseService(salt, method); }
@@ -558,7 +560,7 @@ export class AuthService {
   }
 
   async verifyOTP(VerifyOtpDto: VerifyOtpDto) {
-    const { id, otp } = VerifyOtpDto;
+    const { id, otp, fcmToken } = VerifyOtpDto;
     
     const user = await this.userRepository.findOne({
       where: { id: id },
@@ -686,7 +688,43 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
     const referenceToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.REFEXPIRESIN || '1d'}` });
 
+    const accessTokenExpiry = new Date();
+    accessTokenExpiry.setHours(accessTokenExpiry.getHours() + 0.25);
 
+    const refreshTokenExpiry = new Date();
+    refreshTokenExpiry.setDate(refreshTokenExpiry.getDate() + 1);
+
+    const existing = await this.authTokenRepo.findOne({ where: { user_id: id } });
+
+    if (existing) {
+      // Update existing record
+      await this.authTokenRepo.update(
+        { user_id: id },
+        {
+          phone_id: fcmToken,
+          access_token: accessToken,
+          expires_in_access_token: accessTokenExpiry,
+          refresh_token: referenceToken,
+          expires_in_refresh_token: refreshTokenExpiry,
+          create_date: new Date(),
+          role_id: role.role_id,
+        }
+      );
+    } else {
+      // Insert new record
+      const tokenEntity = this.authTokenRepo.create({
+        user_id: id,
+        phone_id: fcmToken,
+        access_token: accessToken,
+        expires_in_access_token: accessTokenExpiry,
+        refresh_token: referenceToken,
+        expires_in_refresh_token: refreshTokenExpiry,
+        create_date: new Date(),
+        role_id: role.role_id,
+      });
+
+      await this.authTokenRepo.save(tokenEntity);
+    }
 
     return {
       status: 200,

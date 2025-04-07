@@ -22,6 +22,7 @@ import mongoose from 'mongoose';
 import { OrderModule } from './order/order.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Faq } from './entity/faq.entity';
+import { FirebaseService } from './firebase/firebase.service';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { Faq } from './entity/faq.entity';
     OrderModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, FirebaseService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

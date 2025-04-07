@@ -10,6 +10,8 @@ import axios from 'axios';
 import { Request } from 'express';
 import * as amqp from 'amqplib';
 import { Cron } from '@nestjs/schedule';
+import { AuthToken } from 'src/entity/auth-token.entity';
+import { FirebaseService } from 'src/firebase/firebase.service';
 
 declare module 'express' {
   interface Request {
@@ -41,57 +43,13 @@ export class OrderService {
         @InjectRepository(OrdersPharmacies)
         private ordersPharmaciesRepository: Repository<OrdersPharmacies>,
         @InjectRepository(User)
-        private userRepository: Repository<User>
+        private userRepository: Repository<User>,
+        @InjectRepository(AuthToken)
+        private authTokenRepository: Repository<AuthToken>,
+        private fireBaseService: FirebaseService
     ) {}
     
     private readonly QUEUE_NAME = 'new_orders';
-
-    // async onModuleInit() {
-    //     const connection = await amqp.connect('amqp://localhost');
-    //     const channel = await connection.createChannel();
-    //     await channel.assertQueue(this.QUEUE_NAME);
-    //     console.log(channel)
-    //     console.log('Listening for new orders...');
-
-    //     channel.consume(this.QUEUE_NAME, async (msg) => {
-    //         if (msg !== null) {
-    //             const orderData = JSON.parse(msg.content.toString());
-    //             console.log('New order received:', orderData);
-    //             await this.getOrders();
-    //             channel.ack(msg);
-    //         }
-    //     });
-    // }
-
-    // async onModuleInit() {
-    //     try {
-    //         const connection = await amqp.connect('amqp://localhost');
-    //         console.log('✅ Connected to RabbitMQ successfully');
-    
-    //         const channel = await connection.createChannel();
-    //         await channel.assertQueue('new_orders');
-            
-    //         console.log(`✅ Listening for messages in queue: new_orders`);
-    //         channel.consume('new_orders', async (msg) => {
-    //             if (msg !== null) {
-    //                 console.log('✅ Received message:', msg.content.toString());
-    
-    //                 const orderData = JSON.parse(msg.content.toString());
-    //                 console.log('Processing Order:', orderData);
-    
-    //                 await this.getOrders(); // Ensure this function runs successfully
-    //                 console.log('✅ getOrders() function executed successfully');
-    
-    //                 channel.ack(msg);
-    //             } else {
-    //                 console.warn('⚠️ Received NULL message');
-    //             }
-    //         });
-    //     } catch (error) {
-    //         console.error('❌ Error connecting to RabbitMQ:', error);
-    //     }
-    // }
-
     @Cron('*/5 * * * * *')
     async checkForNewOrders() {
         const newOrders = await this.orderRepository.findOne({
@@ -108,12 +66,6 @@ export class OrderService {
             await this.getOrders();
         }
     }
-
-
-    
-    
-    
-
     async calculateDistance(
         origin: { lat: number; lng: number },
         destination: { lat: number; lng: number }
@@ -290,6 +242,18 @@ export class OrderService {
                         message: "Failed to assign order",
                     };
                 }else{
+                    const deliveryBoyData = await this.authTokenRepository.findOne({
+                        where: { user_id: deliveryId },
+                        select: ['phone_id']
+                    });
+    
+                    if (deliveryBoyData?.phone_id) {
+                        await this.fireBaseService.sendNotification(
+                            deliveryBoyData.phone_id,
+                            'New Delivery Assigned',
+                            `You have a new order assigned. Please check your app.`
+                        );
+                    }
                     return {
                         status: 200,
                         message: "Order assigned successfully",
@@ -355,24 +319,4 @@ export class OrderService {
         }));
         return { status: 200, message: 'Assigned orders fetched successfully', data: result};
     }
-
-    // async saveFileData(file: MulterFile) {
-    //     try {
-    //         // const fileUrl = `${process.env.IMAGE_BASE_URL}uploads/${file.filename}`;
-            
-    //         return {
-    //             status: 200,
-    //             message: 'File uploaded successfully',
-    //             data: {
-    //                 originalName: file.originalname,
-    //                 filename: file.filename,
-    //                 // fileUrl: fileUrl,
-    //                 size: file.size,
-    //                 mimeType: file.mimetype
-    //             }
-    //         };
-    //     } catch (error) {
-    //         throw new InternalServerErrorException('Error saving file data: ' + error.message);
-    //     }
-    // }
 }
