@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../../entity/user.entity';
 import { UserData } from '../../entity/userdata.entity';
 import { Repository } from 'typeorm';
+import axios from 'axios';
 
 export class BaseService {
   private salt?: string;
@@ -52,21 +53,17 @@ export class BaseService {
       const apiKey = process.env.GOOGLE_MAPS_API_KEY;
       const url = `${process.env.GOOGLE_MAPS_API_URL}${latitude},${longitude}&key=${apiKey}`;
   
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const response = await axios.get(url, { timeout: 5000 });
   
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeout);
-  
-      const data = await response.json();
+      const data = response.data;
   
       if (data.status === 'OK' && data.results.length > 0) {
         return data.results[0].formatted_address;
       }
   
       return 'Unknown Locations';
-    } catch (error) {
-      console.error('Fetch error:', error.message || error);
+    } catch (error: any) {
+      console.error('Axios error:', error.message || error);
       return 'Unknown Location';
     }
   }
