@@ -148,7 +148,7 @@ export class OrderService {
             FROM users u
             INNER JOIN user_role ur ON ur.user_id = u.id
             LEFT JOIN user_data ud ON ud.user_id = u.id
-            WHERE ur.role_id = 6
+            WHERE ur.role_id = 6 AND u.online = 1
             GROUP BY u.id
         `);
 

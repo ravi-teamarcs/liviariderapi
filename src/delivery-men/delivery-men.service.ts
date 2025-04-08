@@ -311,6 +311,7 @@ export class DeliveryMenService {
         .createQueryBuilder('order')
         .leftJoinAndSelect('order.user', 'user')
         .leftJoinAndSelect('order.userData', 'user_data')
+        .leftJoinAndSelect('order.deliveryMen','deliveryMen')
         .where('order.id = :orderId', { orderId });
 
       const order = await query
@@ -320,6 +321,9 @@ export class DeliveryMenService {
           'order.user_order_status',
           'order.delivery_men',
           'order.latitude',
+          'deliveryMen.id',
+          'deliveryMen.longitude',
+          'deliveryMen.latitude',
           'order.longitude',
           'order.create_date'
         ])
@@ -364,15 +368,17 @@ export class DeliveryMenService {
       ]);
       
       const orderStatus = user_order_status === 7 ? 'Delivered' : '';
-      
+      order['deliveryMen_latitude'] = order.deliveryMen?.latitude? parseFloat(order.deliveryMen.latitude): null;
+      order['deliveryMen_longitude'] = order.deliveryMen?.longitude? parseFloat(order.deliveryMen.longitude): null;
       user['location'] = location;
       pharmacy['location'] = pharmaciesLocation;
       pharmacy['latitude'] = pharmacies.pharmacy.latitude;
       pharmacy['longitude'] = pharmacies.pharmacy.longitude;
       user['latitude'] = latitude;
       user['longitude'] = longitude;
-      delete order.latitude;
-      delete order.longitude;
+      delete order.deliveryMen
+      // delete order.latitude;
+      // delete order.longitude;
       return {
         status: 200,
         message: "Order details fetched successfully",
