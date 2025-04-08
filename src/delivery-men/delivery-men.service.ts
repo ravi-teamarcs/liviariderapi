@@ -704,6 +704,13 @@ export class DeliveryMenService {
     }
   }
   
+  async updateLocation(userId: number, lat: string, lng: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      latitude: lat,
+      longitude: lng,
+    });
+  }
+
 
   
 }

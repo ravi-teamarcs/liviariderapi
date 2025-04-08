@@ -20,5 +20,6 @@ import { Faq } from 'src/entity/faq.entity';
   }),],
   controllers: [DeliveryMenController],
   providers: [DeliveryMenService, BaseService, AuthGuard],
+  exports: [DeliveryMenService],
 })
 export class DeliveryMenModule {}

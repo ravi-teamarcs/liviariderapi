@@ -23,6 +23,7 @@ import { OrderModule } from './order/order.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Faq } from './entity/faq.entity';
 import { FirebaseService } from './firebase/firebase.service';
+import { LocationGateway } from './location/location.gateway';
 
 @Module({
   imports: [
@@ -50,7 +51,7 @@ import { FirebaseService } from './firebase/firebase.service';
     OrderModule,
   ],
   controllers: [AppController],
-  providers: [AppService, FirebaseService],
+  providers: [LocationGateway,AppService, FirebaseService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
