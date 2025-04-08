@@ -244,12 +244,12 @@ export class OrderService {
                 }else{
                     const deliveryBoyData = await this.authTokenRepository.findOne({
                         where: { user_id: deliveryId },
-                        select: ['phone_id']
+                        select: ['push_token']
                     });
     
-                    if (deliveryBoyData?.phone_id) {
+                    if (deliveryBoyData?.push_token) {
                         await this.fireBaseService.sendNotification(
-                            deliveryBoyData.phone_id,
+                            deliveryBoyData.push_token,
                             'New Delivery Assigned',
                             `You have a new order assigned. Please check your app.`
                         );

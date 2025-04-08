@@ -701,7 +701,7 @@ export class AuthService {
       await this.authTokenRepo.update(
         { user_id: id },
         {
-          phone_id: fcmToken,
+          push_token: fcmToken,
           access_token: accessToken,
           expires_in_access_token: accessTokenExpiry,
           refresh_token: referenceToken,
@@ -714,7 +714,7 @@ export class AuthService {
       // Insert new record
       const tokenEntity = this.authTokenRepo.create({
         user_id: id,
-        phone_id: fcmToken,
+        push_token: fcmToken,
         access_token: accessToken,
         expires_in_access_token: accessTokenExpiry,
         refresh_token: referenceToken,
