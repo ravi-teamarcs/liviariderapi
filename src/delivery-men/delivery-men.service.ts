@@ -686,5 +686,24 @@ export class DeliveryMenService {
 
   }
 
+  async updateOnline(isOnline: { isOnline: number }, req) {
+    try {
+      const { id } = req.user;
+  
+      await this.userRepository.update(
+        { id },
+        { online: isOnline.isOnline }
+      );
+  
+      return {
+        status: 200,
+        message: 'Update Successfully',
+      };
+    } catch (error) {
+      throw new Error(`Failed to update online status: ${error.message}`);
+    }
+  }
+  
+
   
 }

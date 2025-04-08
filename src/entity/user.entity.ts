@@ -34,6 +34,9 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   longitude: string;
 
+  @Column({type: 'int', default:1})
+  online: number;
+
   // One-to-many relationship with orders where the user is the customer
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];

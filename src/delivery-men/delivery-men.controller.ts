@@ -3,7 +3,7 @@ import { DeliveryMenService } from './delivery-men.service';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AnyFilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/config/multer.config';
-import { AddAcountDto, Faq, UpdateAcountPriorityDto } from './dto/delivery-men.dto';
+import { AddAcountDto, Faq, IsOnline, UpdateAcountPriorityDto } from './dto/delivery-men.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 interface MulterFile {
   fieldname: string;
@@ -176,4 +176,13 @@ export class DeliveryMenController {
       throw new BadRequestException(error.message);
     }
   }
+
+  
+  @Post('/updateOnline')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  async updateOnline(@Body() isOnline: IsOnline,  @Req() req:Request){
+    return await this.deliveryMenService.updateOnline(isOnline, req);
+  }
+
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
+import { IsIn, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class AddAcountDto {
     @ApiProperty({ example: '123456789789'})
@@ -52,4 +52,10 @@ export class Faq{
     @ApiProperty({ example: 'en'})
     @IsString()
     lang:string;
+}
+
+export class IsOnline{
+    @ApiProperty({ example: '1'})
+    @IsNumber()
+    isOnline:number;
 }
