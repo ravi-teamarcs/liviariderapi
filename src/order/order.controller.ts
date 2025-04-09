@@ -74,7 +74,7 @@ export class OrderController {
   //         throw new BadRequestException(error.message);
   //     }
   // }
-  @Patch('status')
+  @Post('status')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   async updateOrderStatus(
