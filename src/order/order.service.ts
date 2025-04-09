@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { UserData } from 'src/entity/userdata.entity';
 import { Order } from 'src/entity/order.entity';
 import { OrdersPharmacies } from 'src/entity/orders-pharmacies.entity';
@@ -317,7 +317,7 @@ export class OrderService {
     const result = await this.orderRepository.find({
       where: {
         delivery_men: id,
-        user_order_status: 4,
+        user_order_status: In([4, 5]),
       },
       order: {
         id: 'DESC',
