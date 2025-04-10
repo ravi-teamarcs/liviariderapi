@@ -350,29 +350,11 @@ export class DeliveryMenService {
         ])
         .getOne();
 
-      const orderStatusCodeMap: Record<string, number> = {
-        on_delivery: 5,
-        order_cancelled: 6,
-        order_received: 7,
+      const orderStatusMap: Record<number, string> = {
+        4: 'ready for delivery',
+        5: 'on delivery',
+        7: 'order delivered successfully',
       };
-
-      const codeToOrderStatusMap: Record<number, string> = Object.entries(
-        orderStatusCodeMap,
-      ).reduce(
-        (acc, [key, value]) => {
-          acc[value] = key;
-          return acc;
-        },
-        {} as Record<number, string>,
-      );
-
-      function getOrderStatusCode(status: string): number | undefined {
-        return orderStatusCodeMap[status];
-      }
-
-      function getOrderStatusString(code: number): string | undefined {
-        return codeToOrderStatusMap[code];
-      }
 
       if (!order) {
         throw new NotFoundException('Order not found');
@@ -421,7 +403,7 @@ export class DeliveryMenService {
           ),
         ]);
 
-      const orderStatus = user_order_status === 7 ? 'Delivered' : '';
+      const orderStatus = orderStatusMap[user_order_status];
       order['deliveryMen_latitude'] = order.deliveryMen?.latitude
         ? parseFloat(order.deliveryMen.latitude)
         : null;
@@ -442,7 +424,6 @@ export class DeliveryMenService {
         status: 200,
         message: 'Order details fetched successfully',
         data: {
-          order_status: getOrderStatusString(order.user_order_status),
           ...order,
           status: orderStatus,
           pharmacy: pharmacy,
