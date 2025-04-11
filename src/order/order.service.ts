@@ -266,6 +266,7 @@ export class OrderService {
 
           if (deliveryBoyData?.push_token) {
             await this.fireBaseService.sendNotification(
+              order.id,
               deliveryBoyData.push_token,
               'New Delivery Assigned',
               `You have a new order assigned. Please check your app.`,
