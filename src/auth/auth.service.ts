@@ -513,7 +513,7 @@ export class AuthService {
     return {
       status: 200,
       isValid:true,
-      message: 'Login Successfully!',
+      message: 'Register Successfully!',
       data:{
         accessToken,
         referenceToken,

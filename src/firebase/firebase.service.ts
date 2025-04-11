@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import { Injectable } from '@nestjs/common';
 // import * as serviceAccount from './firebase-service-account.json';
-const serviceAccount = require('./firebase-service-account.json');
+const serviceAccount = require('../../config/firebase-service-account.json');
 
 @Injectable()
 export class FirebaseService {
@@ -13,13 +13,14 @@ export class FirebaseService {
     }
   }
 
-  async sendNotification(deviceToken: string, title: string, body: string) {
+  async sendNotification(orderId:number , deviceToken: string, title: string, body: string) {
     const message = {
       notification: {
         title,
         body,
       },
       token: deviceToken,
+      orderId: orderId
     };
 
     return admin.messaging().send(message);
