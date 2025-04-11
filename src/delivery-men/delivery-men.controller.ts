@@ -179,7 +179,6 @@ export class DeliveryMenController {
 
   
   @Post('/updateOnline')
-  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   async updateOnline(@Body() isOnline: IsOnline,  @Req() req:Request){
     return await this.deliveryMenService.updateOnline(isOnline, req);

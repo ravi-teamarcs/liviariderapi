@@ -685,8 +685,8 @@ export class AuthService {
     console.log(payload);
     // const accessToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
     // const referenceToken = jwt.sign(payload, `${process.env.JWT_SECRET || 'raider'}`, { expiresIn: `${process.env.REFEXPIRESIN || '1d'}` });
-    const accessToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.ACCESSEXPIRESIN || '0.25h'}` });
-    const referenceToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.REFEXPIRESIN || '1d'}` });
+    const accessToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.ACCESSEXPIRESIN || '365d'}` });
+    const referenceToken = this.jwtService.sign(payload, { secret: `${process.env.JWT_SECRET || 'raider'}`, expiresIn: `${process.env.REFEXPIRESIN || '365d'}` });
 
     const accessTokenExpiry = new Date();
     accessTokenExpiry.setHours(accessTokenExpiry.getHours() + 0.25);
