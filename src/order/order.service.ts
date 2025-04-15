@@ -141,7 +141,7 @@ export class OrderService {
   async findNearestDeliveryBoys(
     pharmacyLat: number,
     pharmacyLng: number,
-    maxDistance: number = 5000, // 5km radius
+    maxDistance: number = 10000, // 10km radius
     limit: number = 1,
   ): Promise<DeliveryBoyWithDistance[]> {
     // Get all delivery boys using a raw query

@@ -20,7 +20,9 @@ export class FirebaseService {
         body,
       },
       token: deviceToken,
-      orderId: orderId
+      data: {
+        orderId: orderId.toString(),
+      },
     };
 
     return admin.messaging().send(message);
